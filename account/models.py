@@ -3,8 +3,16 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 import uuid
 from account.manager import CustomUserManager
+from django.conf import settings
+
 
 class User(AbstractUser):
+
+    class RoleChoices(models.TextChoices):
+        ADMIN = "ADMIN", _("Admin")
+        PARENT = "PATIENT", _("Patient")
+        BABYSITTER = "THERAPIST", _("Therapist")
+
     username = None
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True)
@@ -12,19 +20,10 @@ class User(AbstractUser):
     last_name = models.CharField(max_length=30, blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
 
-    groups = models.ManyToManyField(
-        Group,
-        related_name='custom_user_set',  # avoid clash
-        blank=True,
-        help_text=_('The groups this user belongs to.'),
-        verbose_name=_('groups')
-    )
-    user_permissions = models.ManyToManyField(
-        Permission,
-        related_name='custom_user_set',  # avoid clash
-        blank=True,
-        help_text=_('Specific permissions for this user.'),
-        verbose_name=_('user permissions')
+    role = models.CharField(
+        max_length=20,
+        choices=RoleChoices.choices,
+        help_text=_("Designates the role of the user in the system."),
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -53,4 +52,27 @@ class User(AbstractUser):
         return self.is_superuser
 
     def get_full_name(self):
-        return f"{self.first_name} {self.last_name}" if self.last_name else self.first_name
+        return (
+            f"{self.first_name} {self.last_name}" if self.last_name else self.first_name
+        )
+
+
+class UserProfile(models.Model):
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="profile",
+    )
+
+    # Basic profile fields
+    profile_picture = models.ImageField(upload_to="profiles/", blank=True, null=True)
+    address = models.CharField(max_length=255, blank=True, null=True)
+
+    bio = models.TextField(blank=True, null=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Profile: {self.user.email}"

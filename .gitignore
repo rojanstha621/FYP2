@@ -1,0 +1,25 @@
+./venv
+venv/
+__pycache__/    
+*.pyc
+.DS_Store   
+.env
+.idea/
+.vscode/
+*.log
+
+# Ignore database files
+*.sqlite3
+# Ignore coverage reports
+htmlcov/
+.coverage
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+# Ignore distribution/build files
+dist/
+build/
+*.egg-info/
+# Ignore system files
+Thumbs.db
+ehthumbs.db
+Desktop.ini

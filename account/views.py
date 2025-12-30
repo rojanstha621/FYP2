@@ -1,59 +1,170 @@
-# views.py
-from rest_framework import generics, status
-from rest_framework.permissions import IsAdminUser, AllowAny
+from rest_framework import status
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.contrib.auth import authenticate
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework import generics
+
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from .models import UserProfile
+from .serializers import (
+    LoginSerializer,
+    LogoutSerializer,
+    MeSerializer,
+    UserBasicSerializer,
+    UserProfileSerializer,
+    UserUpdateSerializer,
+    ChangePasswordSerializer,
+    RegisterSerializer,
+    AdminUserListSerializer,
+    AdminUserDetailSerializer,
+    AdminUserUpdateSerializer,
+)
+from .permissions import IsAdminRole
+
 from .models import User
-from .serializers import UserSerializer
-
-# ----------------------
-# Register
-# ----------------------  
-class RegisterView(APIView):
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        serializer = UserSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        return Response({"message": "User registered successfully", "user": serializer.data}, status=status.HTTP_201_CREATED)
 
 
-# ----------------------
-# Login
-# ----------------------
 class LoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        email = request.data.get('email')
-        password = request.data.get('password')
+        serializer = LoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        # 🔴 FIX HERE: use username=email
-        user = authenticate(request, username=email, password=password)
+        user = serializer.validated_data["user"]
+        refresh = RefreshToken.for_user(user)
 
-        if user:
-            refresh = RefreshToken.for_user(user)
-            return Response({
+        return Response(
+            {
                 "message": "Login successful",
                 "access": str(refresh.access_token),
-                "refresh": str(refresh)
-            })
+                "refresh": str(refresh),
+            },
+            status=status.HTTP_200_OK,
+        )
 
-        return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
-        
-# ----------------------
-# CRUD for Users (Superadmin only)
-# ----------------------
-class UserListCreateView(generics.ListCreateAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    permission_classes = [IsAdminUser]  # Only superadmin
 
-class UserRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+class LogoutView(APIView):
+    """
+    JWT logout = blacklist refresh token.
+    Frontend should send refresh token.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = LogoutSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            {"message": "Logged out successfully"}, status=status.HTTP_200_OK
+        )
+
+
+class MeView(APIView):
+    """
+    Get current user + profile. Ensures profile exists.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+        data = {
+            "user": UserBasicSerializer(request.user).data,
+            "profile": UserProfileSerializer(profile).data,
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+    def patch(self, request):
+        """
+        Update basic user info + profile info in one request.
+        Supports profile_picture upload (multipart).
+        """
+        profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+        user_serializer = UserUpdateSerializer(
+            request.user, data=request.data, partial=True
+        )
+        user_serializer.is_valid(raise_exception=True)
+        user_serializer.save()
+
+        profile_serializer = UserProfileSerializer(
+            profile, data=request.data, partial=True
+        )
+        profile_serializer.is_valid(raise_exception=True)
+        profile_serializer.save()
+
+        data = {
+            "user": UserBasicSerializer(request.user).data,
+            "profile": UserProfileSerializer(profile).data,
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class ProfileUpdateView(APIView):
+    """
+    Optional separate endpoint just for image upload.
+    Use this only if you want a dedicated endpoint.
+    """
+
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+    http_method_names = ["patch"]
+
+    def patch(self, request):
+        profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+        serializer = UserProfileSerializer(profile, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(
+            data=request.data, context={"request": request}
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            {"message": "Password updated successfully"}, status=status.HTTP_200_OK
+        )
+
+
+class RegisterView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(
+            {"message": "Registration successful. Please log in."},
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class AdminUserListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated, IsAdminRole]
+    queryset = User.objects.all().order_by("-created_at")
+    serializer_class = AdminUserListSerializer
+
+
+class AdminUserDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated, IsAdminRole]
     queryset = User.objects.all()
-    serializer_class = UserSerializer
-    permission_classes = [IsAdminUser]  # Only superadmin
+    lookup_field = "id"
+
+    def get_serializer_class(self):
+        if self.request.method == "PATCH":
+            return AdminUserUpdateSerializer
+        return AdminUserDetailSerializer
