@@ -7,6 +7,7 @@ from rest_framework import generics
 
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from myproject.utils import APIResponse
 from .models import UserProfile
 from .serializers import (
     LoginSerializer,
@@ -36,13 +37,15 @@ class LoginView(APIView):
         user = serializer.validated_data["user"]
         refresh = RefreshToken.for_user(user)
 
-        return Response(
-            {
-                "message": "Login successful",
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
-            },
-            status=status.HTTP_200_OK,
+        result = {
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+        }
+        return APIResponse.send(
+            is_success=True,
+            message="Login successful",
+            result=result,
+            status_code=status.HTTP_200_OK,
         )
 
 
@@ -58,8 +61,10 @@ class LogoutView(APIView):
         serializer = LogoutSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(
-            {"message": "Logged out successfully"}, status=status.HTTP_200_OK
+        return APIResponse.send(
+            is_success=True,
+            message="Logged out successfully",
+            status_code=status.HTTP_200_OK,
         )
 
 
@@ -77,7 +82,12 @@ class MeView(APIView):
             "user": UserBasicSerializer(request.user).data,
             "profile": UserProfileSerializer(profile).data,
         }
-        return Response(data, status=status.HTTP_200_OK)
+        return APIResponse.send(
+            is_success=True,
+            message="User profile retrieved",
+            result=data,
+            status_code=status.HTTP_200_OK,
+        )
 
     def patch(self, request):
         """
@@ -102,7 +112,12 @@ class MeView(APIView):
             "user": UserBasicSerializer(request.user).data,
             "profile": UserProfileSerializer(profile).data,
         }
-        return Response(data, status=status.HTTP_200_OK)
+        return APIResponse.send(
+            is_success=True,
+            message="Profile updated successfully",
+            result=data,
+            status_code=status.HTTP_200_OK,
+        )
 
 
 class ProfileUpdateView(APIView):
@@ -122,7 +137,12 @@ class ProfileUpdateView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return APIResponse.send(
+            is_success=True,
+            message="Profile updated successfully",
+            result=serializer.data,
+            status_code=status.HTTP_200_OK,
+        )
 
 
 class ChangePasswordView(APIView):
@@ -134,8 +154,10 @@ class ChangePasswordView(APIView):
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(
-            {"message": "Password updated successfully"}, status=status.HTTP_200_OK
+        return APIResponse.send(
+            is_success=True,
+            message="Password updated successfully",
+            status_code=status.HTTP_200_OK,
         )
 
 
@@ -147,9 +169,10 @@ class RegisterView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        return Response(
-            {"message": "Registration successful. Please log in."},
-            status=status.HTTP_201_CREATED,
+        return APIResponse.send(
+            is_success=True,
+            message="Registration successful. Please log in.",
+            status_code=status.HTTP_201_CREATED,
         )
 
 
