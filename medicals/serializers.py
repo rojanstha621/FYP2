@@ -68,3 +68,37 @@ class TherapistPatientAssignmentSerializer(serializers.ModelSerializer):
             "is_active",
         ]
         read_only_fields = ["id", "assigned_at"]
+
+
+class MyPatientsSerializer(serializers.ModelSerializer):
+    """Serializer for therapists to view their assigned patients"""
+
+    patient_details = UserBasicSerializer(source="patient", read_only=True)
+
+    class Meta:
+        model = TherapistPatientAssignment
+        fields = [
+            "id",
+            "patient",
+            "patient_details",
+            "assigned_at",
+            "is_active",
+        ]
+        read_only_fields = ["id", "assigned_at"]
+
+
+class MyTherapistsSerializer(serializers.ModelSerializer):
+    """Serializer for patients to view their assigned therapists"""
+
+    therapist_details = UserBasicSerializer(source="therapist", read_only=True)
+
+    class Meta:
+        model = TherapistPatientAssignment
+        fields = [
+            "id",
+            "therapist",
+            "therapist_details",
+            "assigned_at",
+            "is_active",
+        ]
+        read_only_fields = ["id", "assigned_at"]

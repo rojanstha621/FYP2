@@ -9,6 +9,8 @@ from .serializers import (
     MedicalHistorySerializer,
     MedicalHistoryDetailSerializer,
     TherapistPatientAssignmentSerializer,
+    MyPatientsSerializer,
+    MyTherapistsSerializer,
 )
 from .permissions import (
     IsPatientOrTherapistReadOnly,
@@ -188,10 +190,6 @@ class MedicalHistoryViewSet(viewsets.ModelViewSet):
 
 
 class TherapistPatientAssignmentViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for managing therapist-patient assignments.
-    Only admins can manage assignments.
-    """
 
     queryset = TherapistPatientAssignment.objects.all()
     serializer_class = TherapistPatientAssignmentSerializer
@@ -307,5 +305,86 @@ class TherapistPatientAssignmentViewSet(viewsets.ModelViewSet):
         return APIResponse.send(
             is_success=True,
             message="Assignment deleted successfully",
+            status_code=status.HTTP_200_OK,
+        )
+
+    @action(detail=False, methods=["get"], url_path="my-patients")
+    def my_patients(self, request):
+        """
+        Get therapist's assigned patients.
+        Only accessible by therapists.
+        """
+        if request.user.role != "THERAPIST":
+            return APIResponse.send(
+                is_success=False,
+                message="Only therapists can access this endpoint",
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Get active assignments for this therapist
+        assignments = TherapistPatientAssignment.objects.filter(
+            therapist=request.user, is_active=True
+        ).select_related("patient")
+
+        serializer = MyPatientsSerializer(assignments, many=True)
+
+        return APIResponse.send(
+            is_success=True,
+            message="Your assigned patients retrieved successfully",
+            result=serializer.data,
+            status_code=status.HTTP_200_OK,
+        )
+
+    @action(detail=False, methods=["get"], url_path="my-therapists")
+    def my_therapists(self, request):
+        """
+        Get patient's assigned therapists.
+        Only accessible by patients.
+        """
+        if request.user.role != "PATIENT":
+            return APIResponse.send(
+                is_success=False,
+                message="Only patients can access this endpoint",
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Get active assignments for this patient
+        assignments = TherapistPatientAssignment.objects.filter(
+            patient=request.user, is_active=True
+        ).select_related("therapist")
+
+        serializer = MyTherapistsSerializer(assignments, many=True)
+
+        return APIResponse.send(
+            is_success=True,
+            message="Your assigned therapists retrieved successfully",
+            result=serializer.data,
+            status_code=status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=["patch"], url_path="toggle-status")
+    def toggle_status(self, request, pk=None):
+        """
+        Toggle assignment active/inactive status.
+        Only accessible by admins.
+        """
+        if request.user.role != "ADMIN":
+            return APIResponse.send(
+                is_success=False,
+                message="Only admins can toggle assignment status",
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+
+        assignment = self.get_object()
+        assignment.is_active = not assignment.is_active
+        assignment.save()
+
+        serializer = self.get_serializer(assignment)
+        status_text = "activated" if assignment.is_active else "deactivated"
+
+        return APIResponse.send(
+            is_success=True,
+            message=f"Assignment {status_text} successfully",
+            result=serializer.data,
             status_code=status.HTTP_200_OK,
         )
