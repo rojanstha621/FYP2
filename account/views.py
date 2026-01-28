@@ -21,8 +21,11 @@ from .serializers import (
     AdminUserListSerializer,
     AdminUserDetailSerializer,
     AdminUserUpdateSerializer,
+    TherapistSummarySerializer,
+    PatientDashboardSerializer,
 )
 from .permissions import IsAdminRole
+from account.permissions import IsPatient
 
 from .models import User
 
@@ -191,3 +194,139 @@ class AdminUserDetailView(generics.RetrieveUpdateDestroyAPIView):
         if self.request.method == "PATCH":
             return AdminUserUpdateSerializer
         return AdminUserDetailSerializer
+
+
+class PendingTherapistsListView(generics.ListAPIView):
+    """
+    List all therapists with PENDING status.
+    Admin-only.
+    """
+
+    permission_classes = [IsAuthenticated, IsAdminRole]
+    serializer_class = AdminUserListSerializer
+
+    def get_queryset(self):
+        return User.objects.filter(role="THERAPIST", therapist_status=User.TherapistStatusChoices.PENDING)
+
+
+class ApproveTherapistView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminRole]
+
+    def patch(self, request, id):
+        try:
+            therapist = User.objects.get(id=id, role="THERAPIST")
+        except User.DoesNotExist:
+            return APIResponse.send(
+                is_success=False,
+                message="Therapist not found",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
+        therapist.therapist_status = User.TherapistStatusChoices.APPROVED
+        therapist.is_therapist_approved = True
+        from django.utils import timezone
+        therapist.therapist_verified_at = timezone.now()
+        therapist.save(update_fields=["therapist_status", "is_therapist_approved", "therapist_verified_at"]) 
+
+        return APIResponse.send(
+            is_success=True,
+            message="Therapist approved",
+            result=AdminUserDetailSerializer(therapist).data,
+            status_code=status.HTTP_200_OK,
+        )
+
+
+class RejectTherapistView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminRole]
+
+    def patch(self, request, id):
+        try:
+            therapist = User.objects.get(id=id, role="THERAPIST")
+        except User.DoesNotExist:
+            return APIResponse.send(
+                is_success=False,
+                message="Therapist not found",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
+        therapist.therapist_status = User.TherapistStatusChoices.REJECTED
+        therapist.is_therapist_approved = False
+        therapist.save(update_fields=["therapist_status", "is_therapist_approved"]) 
+
+        return APIResponse.send(
+            is_success=True,
+            message="Therapist rejected",
+            result=AdminUserDetailSerializer(therapist).data,
+            status_code=status.HTTP_200_OK,
+        )
+
+
+class ApprovedTherapistsListView(generics.ListAPIView):
+    """List all approved therapists; restricted to patients"""
+    permission_classes = [IsAuthenticated, IsPatient]
+    serializer_class = TherapistSummarySerializer
+
+    def get_queryset(self):
+        from .models import User
+        return User.objects.filter(
+            role="THERAPIST",
+            therapist_status=User.TherapistStatusChoices.APPROVED,
+        ).order_by("first_name", "last_name")
+
+
+class ApprovedTherapistDetailView(APIView):
+    """Retrieve a single approved therapist's public summary (patients only)"""
+    permission_classes = [IsAuthenticated, IsPatient]
+
+    def get(self, request, id):
+        from .models import User
+        try:
+            therapist = User.objects.get(id=id, role="THERAPIST")
+        except User.DoesNotExist:
+            return APIResponse.send(
+                is_success=False,
+                message="Therapist not found",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
+        if therapist.therapist_status != User.TherapistStatusChoices.APPROVED:
+            return APIResponse.send(
+                is_success=False,
+                message="Therapist is not approved",
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+
+        data = TherapistPublicDetailSerializer(therapist).data
+        return APIResponse.send(
+            is_success=True,
+            message="Therapist details",
+            result=data,
+            status_code=status.HTTP_200_OK,
+        )
+
+
+class PatientDashboardView(APIView):
+    """
+    Patient-only endpoint for dashboard.
+    Returns patient info, assigned therapist, today's exercises, and progress summary.
+    """
+    permission_classes = [IsAuthenticated, IsPatient]
+
+    def get(self, request):
+        """
+        GET /dashboard/patient/
+        
+        Returns dashboard data for the authenticated patient.
+        Includes assigned therapist (if any), today's exercises, and progress summary.
+        """
+        user = request.user
+
+        # Serialize the patient data
+        serializer = PatientDashboardSerializer(user)
+
+        return APIResponse.send(
+            is_success=True,
+            message="Patient dashboard retrieved",
+            result=serializer.data,
+            status_code=status.HTTP_200_OK,
+        )

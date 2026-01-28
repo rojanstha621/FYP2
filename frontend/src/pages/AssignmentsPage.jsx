@@ -1,21 +1,22 @@
 import { useState, useEffect } from 'react';
 import { assignmentAPI, adminAPI } from '../services/api';
-import { Card, Button, Select, Textarea, Input } from '../components/FormElements';
+import { useAuth } from '../context/AuthContext';
+import { Card, Button, Select } from '../components/FormElements';
 import { Alert } from '../components/Alert';
 import { Spinner } from '../components/Spinner';
 
 export const AssignmentsPage = () => {
+  const { user } = useAuth();
   const [assignments, setAssignments] = useState([]);
-  const [users, setUsers] = useState([]);
+  const [patients, setPatients] = useState([]);
+  const [therapists, setTherapists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
+    therapist: '',
     patient: '',
-    title: '',
-    description: '',
-    duration: '',
   });
 
   useEffect(() => {
@@ -24,16 +25,29 @@ export const AssignmentsPage = () => {
 
   const fetchData = async () => {
     try {
-      const [assignmentsRes, usersRes] = await Promise.all([
-        assignmentAPI.getAssignments(),
-        adminAPI.getUsers(),
-      ]);
+      const requests = [assignmentAPI.getAssignments()];
 
-      setAssignments(assignmentsRes.data.result);
-      
-      // Filter to show only patients
-      const patients = usersRes.data.result.filter(u => u.role === 'PATIENT');
-      setUsers(patients);
+      // Only admins need the full user list to create assignments
+      if (user?.role === 'ADMIN') {
+        requests.push(adminAPI.getUsers());
+      }
+
+      const [assignmentsRes, usersRes] = await Promise.all(requests);
+
+      const assignmentData = assignmentsRes.data.result || assignmentsRes.data || [];
+
+      // Admin sees all, therapists see only their assignments
+      const visibleAssignments = user?.role === 'THERAPIST'
+        ? assignmentData.filter(a => a.therapist === user.id)
+        : assignmentData;
+
+      setAssignments(visibleAssignments);
+
+      if (usersRes) {
+        const userList = usersRes.data.result || usersRes.data || [];
+        setPatients(userList.filter(u => u.role === 'PATIENT'));
+        setTherapists(userList.filter(u => u.role === 'THERAPIST'));
+      }
     } catch (err) {
       setError('Failed to load data');
     } finally {
@@ -49,18 +63,19 @@ export const AssignmentsPage = () => {
     e.preventDefault();
     setError('');
 
-    if (!formData.patient) {
-      setError('Please select a patient');
+    if (!formData.patient || !formData.therapist) {
+      setError('Please select both therapist and patient');
       return;
     }
 
     try {
       await assignmentAPI.createAssignment({
+        therapist: formData.therapist,
         patient: formData.patient,
       });
       setSuccess('Patient assigned successfully');
       setShowForm(false);
-      setFormData({ patient: '', title: '', description: '', duration: '' });
+      setFormData({ therapist: '', patient: '' });
       await fetchData();
     } catch (err) {
       setError('Failed to create assignment');
@@ -83,18 +98,34 @@ export const AssignmentsPage = () => {
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-4xl font-bold text-palette-dark">Patient Assignments</h1>
-        <Button variant="primary" onClick={() => setShowForm(true)}>
-          Assign New Patient
-        </Button>
+        {user?.role === 'ADMIN' && (
+          <Button variant="primary" onClick={() => setShowForm(true)}>
+            Assign New Patient
+          </Button>
+        )}
       </div>
 
       {error && <Alert type="error" message={error} onClose={() => setError('')} />}
       {success && <Alert type="success" message={success} onClose={() => setSuccess('')} />}
 
-      {showForm && (
+      {showForm && user?.role === 'ADMIN' && (
         <Card className="mb-8">
           <h2 className="text-2xl font-bold text-palette-dark mb-6">Assign New Patient</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <Select
+              label="Select Therapist"
+              name="therapist"
+              value={formData.therapist}
+              onChange={handleChange}
+            >
+              <option value="">-- Choose a therapist --</option>
+              {therapists.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.first_name} {user.last_name} ({user.email})
+                </option>
+              ))}
+            </Select>
+
             <Select
               label="Select Patient"
               name="patient"
@@ -130,6 +161,9 @@ export const AssignmentsPage = () => {
                   {assignment.patient_details.first_name} {assignment.patient_details.last_name}
                 </h3>
                 <p className="text-palette-dark/60 text-sm">{assignment.patient_details.email}</p>
+                <p className="text-palette-dark/60 text-sm">
+                  Therapist: {assignment.therapist_details?.first_name} {assignment.therapist_details?.last_name}
+                </p>
               </div>
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                 assignment.is_active 
@@ -144,29 +178,33 @@ export const AssignmentsPage = () => {
               Assigned: {new Date(assignment.assigned_at).toLocaleDateString()}
             </p>
 
-            <div className="flex gap-4">
-              <Button variant="primary" className="flex-1">
-                Create Exercise Plan
-              </Button>
-              {assignment.is_active && (
-                <Button 
-                  variant="danger"
-                  onClick={() => handleDeactivate(assignment.id)}
-                >
-                  Deactivate
+            {user?.role === 'ADMIN' && (
+              <div className="flex gap-4">
+                <Button variant="primary" className="flex-1">
+                  Create Exercise Plan
                 </Button>
-              )}
-            </div>
+                {assignment.is_active && (
+                  <Button 
+                    variant="danger"
+                    onClick={() => handleDeactivate(assignment.id)}
+                  >
+                    Deactivate
+                  </Button>
+                )}
+              </div>
+            )}
           </Card>
         ))}
       </div>
 
-      {assignments.length === 0 && !showForm && (
+      {assignments.length === 0 && (!showForm || user?.role !== 'ADMIN') && (
         <Card className="text-center py-12">
           <p className="text-palette-dark/70 mb-4">No patient assignments yet</p>
-          <Button variant="primary" onClick={() => setShowForm(true)}>
-            Assign Your First Patient
-          </Button>
+          {user?.role === 'ADMIN' && (
+            <Button variant="primary" onClick={() => setShowForm(true)}>
+              Assign Your First Patient
+            </Button>
+          )}
         </Card>
       )}
     </div>

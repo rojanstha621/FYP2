@@ -63,6 +63,28 @@ export const AdminUsersPage = () => {
     }
   };
 
+  const handleApproveTherapist = async (id) => {
+    try {
+      await adminAPI.approveTherapist(id);
+      setSuccess('Therapist approved successfully');
+      await fetchUsers();
+      setSelectedUser(null);
+    } catch (err) {
+      setError('Failed to approve therapist');
+    }
+  };
+
+  const handleRejectTherapist = async (id) => {
+    try {
+      await adminAPI.rejectTherapist(id);
+      setSuccess('Therapist rejected');
+      await fetchUsers();
+      setSelectedUser(null);
+    } catch (err) {
+      setError('Failed to reject therapist');
+    }
+  };
+
   const filteredUsers = roleFilter
     ? users.filter(u => u.role === roleFilter)
     : users;
@@ -103,6 +125,7 @@ export const AdminUsersPage = () => {
               <th className="text-left py-3 px-4 font-semibold text-palette-dark/80">Email</th>
               <th className="text-left py-3 px-4 font-semibold text-palette-dark/80">Role</th>
               <th className="text-left py-3 px-4 font-semibold text-palette-dark/80">Status</th>
+              <th className="text-left py-3 px-4 font-semibold text-palette-dark/80">Approval</th>
               <th className="text-left py-3 px-4 font-semibold text-palette-dark/80">Actions</th>
             </tr>
           </thead>
@@ -130,6 +153,17 @@ export const AdminUsersPage = () => {
                   }`}>
                     {user.is_active ? 'Active' : 'Inactive'}
                   </span>
+                </td>
+                <td className="py-3 px-4">
+                  {user.role === 'THERAPIST' && (
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      user.therapist_status === 'APPROVED' ? 'bg-green-100 text-green-800' :
+                      user.therapist_status === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {user.therapist_status || 'PENDING'}
+                    </span>
+                  )}
                 </td>
                 <td className="py-3 px-4">
                   <Button
@@ -209,6 +243,35 @@ export const AdminUsersPage = () => {
                 </Select>
               </div>
             </div>
+
+            {selectedUser.role === 'THERAPIST' && (
+              <div className="mb-6 p-4 bg-gray-50 rounded">
+                <h3 className="text-sm font-semibold mb-3">Therapist Approval</h3>
+                <div className="flex gap-2">
+                  {selectedUser.therapist_status !== 'APPROVED' && (
+                    <Button
+                      variant="primary"
+                      className="flex-1"
+                      onClick={() => handleApproveTherapist(selectedUser.id)}
+                    >
+                      Approve Therapist
+                    </Button>
+                  )}
+                  {selectedUser.therapist_status !== 'REJECTED' && (
+                    <Button
+                      variant="danger"
+                      className="flex-1"
+                      onClick={() => handleRejectTherapist(selectedUser.id)}
+                    >
+                      Reject Therapist
+                    </Button>
+                  )}
+                </div>
+                <div className="mt-2 text-sm text-gray-600">
+                  Current Status: <span className="font-semibold">{selectedUser.therapist_status || 'PENDING'}</span>
+                </div>
+              </div>
+            )}
 
             <div className="flex gap-4">
               <Button

@@ -70,6 +70,9 @@ export const authAPI = {
     }),
   changePassword: (data) =>
     apiClient.post('/api/account/change-password/', data),
+  // Patient dashboard
+  getPatientDashboard: () =>
+    apiClient.get('/api/account/dashboard/patient/'),
 };
 
 // Medical History API
@@ -98,6 +101,12 @@ export const assignmentAPI = {
     apiClient.patch(`/api/medicals/assignments/${id}/`, data),
   deleteAssignment: (id) =>
     apiClient.delete(`/api/medicals/assignments/${id}/`),
+  requestAssignment: (therapistId) =>
+    apiClient.post('/api/medicals/assignments/request/', { therapist_id: therapistId }),
+  getPending: () =>
+    apiClient.get('/api/medicals/assignments/pending/'),
+  activateAssignment: (id) =>
+    apiClient.patch(`/api/medicals/assignments/${id}/activate/`),
 };
 
 // Admin API
@@ -108,6 +117,33 @@ export const adminAPI = {
     apiClient.patch(`/api/account/users/${id}/`, data),
   deleteUser: (id) =>
     apiClient.delete(`/api/account/users/${id}/`),
+  getPendingTherapists: () => apiClient.get('/api/account/therapists/pending/'),
+  approveTherapist: (id) => apiClient.patch(`/api/account/therapists/${id}/approve/`),
+  rejectTherapist: (id) => apiClient.patch(`/api/account/therapists/${id}/reject/`),
+};
+
+// Exercise API
+export const exerciseAPI = {
+  getExercises: (params) =>
+    apiClient.get('/api/exercises/exercises/', { params }),
+  getExercise: (id) =>
+    apiClient.get(`/api/exercises/exercises/${id}/`),
+  createExercise: (formData) =>
+    apiClient.post('/api/exercises/exercises/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  updateExercise: (id, formData) =>
+    apiClient.patch(`/api/exercises/exercises/${id}/`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  deleteExercise: (id) =>
+    apiClient.delete(`/api/exercises/exercises/${id}/`),
+};
+
+// Therapist Directory API
+export const therapistAPI = {
+  getApproved: () => apiClient.get('/api/account/therapists/approved/'),
+  getById: (id) => apiClient.get(`/api/account/therapists/${id}/`),
 };
 
 export default apiClient;

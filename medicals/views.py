@@ -1,7 +1,8 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, generics
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from myproject.utils import APIResponse
 from .models import MedicalHistory, TherapistPatientAssignment
@@ -17,6 +18,7 @@ from .permissions import (
     IsTherapistReadOnly,
     IsPatientOwner,
 )
+from account.permissions import IsTherapistApproved, IsPatient, IsAdminOrStaff
 
 
 class MedicalHistoryViewSet(viewsets.ModelViewSet):
@@ -245,12 +247,14 @@ class TherapistPatientAssignmentViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """
-        Create assignment. Only admins can create.
+        Create assignment. Admins or approved therapists.
         """
-        if request.user.role != "ADMIN":
+        if not (
+            request.user.role == "ADMIN" or getattr(request.user, "is_approved_therapist", False)
+        ):
             return APIResponse.send(
                 is_success=False,
-                message="Only admins can create assignments",
+                message="Only admins or approved therapists can create assignments",
                 status_code=status.HTTP_403_FORBIDDEN,
             )
 
@@ -267,12 +271,14 @@ class TherapistPatientAssignmentViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         """
-        Update assignment. Only admins can update.
+        Update assignment. Admins or approved therapists can update their assignment.
         """
-        if request.user.role != "ADMIN":
+        if not (
+            request.user.role == "ADMIN" or getattr(request.user, "is_approved_therapist", False)
+        ):
             return APIResponse.send(
                 is_success=False,
-                message="Only admins can update assignments",
+                message="Only admins or approved therapists can update assignments",
                 status_code=status.HTTP_403_FORBIDDEN,
             )
 
@@ -290,12 +296,14 @@ class TherapistPatientAssignmentViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         """
-        Delete assignment. Only admins can delete.
+        Delete assignment. Admins or approved therapists.
         """
-        if request.user.role != "ADMIN":
+        if not (
+            request.user.role == "ADMIN" or getattr(request.user, "is_approved_therapist", False)
+        ):
             return APIResponse.send(
                 is_success=False,
-                message="Only admins can delete assignments",
+                message="Only admins or approved therapists can delete assignments",
                 status_code=status.HTTP_403_FORBIDDEN,
             )
 
@@ -354,11 +362,13 @@ class TherapistPatientAssignmentViewSet(viewsets.ModelViewSet):
         ).select_related("therapist")
 
         serializer = MyTherapistsSerializer(assignments, many=True)
+        # Filter out None representations (non-approved therapists)
+        data = [x for x in serializer.data if x is not None]
 
         return APIResponse.send(
             is_success=True,
             message="Your assigned therapists retrieved successfully",
-            result=serializer.data,
+            result=data,
             status_code=status.HTTP_200_OK,
         )
 
@@ -385,6 +395,189 @@ class TherapistPatientAssignmentViewSet(viewsets.ModelViewSet):
         return APIResponse.send(
             is_success=True,
             message=f"Assignment {status_text} successfully",
+            result=serializer.data,
+            status_code=status.HTTP_200_OK,
+        )
+
+
+class PatientDashboardView(APIView):
+    """Patient dashboard data including assigned approved therapists and all available therapists"""
+
+    permission_classes = [IsAuthenticated, IsPatient]
+
+    def get(self, request):
+        patient = request.user
+
+        # Get assigned therapists
+        assignments = TherapistPatientAssignment.objects.filter(
+            patient=patient, is_active=True
+        ).select_related("therapist")
+
+        assigned_therapists = []
+        for a in assignments:
+            t = a.therapist
+            if getattr(t, "is_approved_therapist", False):
+                assigned_therapists.append(
+                    {
+                        "id": str(t.id),
+                        "first_name": t.first_name,
+                        "last_name": t.last_name,
+                        "email": t.email,
+                        "phone_number": t.phone_number,
+                    }
+                )
+
+        # Get all approved therapists
+        from account.models import User
+        all_therapists = User.objects.filter(
+            role="THERAPIST",
+            therapist_status=User.TherapistStatusChoices.APPROVED,
+        ).order_by("first_name", "last_name")
+
+        available_therapists = [
+            {
+                "id": str(t.id),
+                "first_name": t.first_name,
+                "last_name": t.last_name,
+                "email": t.email,
+                "phone_number": t.phone_number,
+            }
+            for t in all_therapists
+        ]
+
+        result = {
+            "patient": {
+                "id": str(patient.id),
+                "first_name": patient.first_name,
+                "last_name": patient.last_name,
+                "email": patient.email,
+                "phone_number": patient.phone_number,
+            },
+            "assigned_therapists": assigned_therapists,
+            "available_therapists": available_therapists,
+        }
+
+        return APIResponse.send(
+            is_success=True,
+            message="Patient dashboard data",
+            result=result,
+            status_code=status.HTTP_200_OK,
+        )
+
+
+class AssignmentRequestView(APIView):
+    """Patients can request an assignment with an approved therapist"""
+    permission_classes = [IsAuthenticated, IsPatient]
+
+    def post(self, request):
+        therapist_id = request.data.get("therapist_id")
+        if not therapist_id:
+            return APIResponse.send(
+                is_success=False,
+                message="therapist_id is required",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from account.models import User
+        try:
+            therapist = User.objects.get(id=therapist_id, role="THERAPIST")
+        except User.DoesNotExist:
+            return APIResponse.send(
+                is_success=False,
+                message="Therapist not found",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
+        if not getattr(therapist, "is_approved_therapist", False):
+            return APIResponse.send(
+                is_success=False,
+                message="Therapist is not approved",
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+
+        patient = request.user
+
+        # Check existing assignment
+        existing = TherapistPatientAssignment.objects.filter(
+            therapist=therapist, patient=patient
+        ).first()
+        if existing:
+            if existing.is_active:
+                return APIResponse.send(
+                    is_success=False,
+                    message="You are already assigned to this therapist",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+            else:
+                return APIResponse.send(
+                    is_success=False,
+                    message="You have a pending request for this therapist",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # Create as inactive (pending approval)
+        assignment = TherapistPatientAssignment.objects.create(
+            therapist=therapist,
+            patient=patient,
+            is_active=False,
+        )
+
+        serializer = TherapistPatientAssignmentSerializer(assignment)
+        return APIResponse.send(
+            is_success=True,
+            message="Assignment request submitted",
+            result=serializer.data,
+            status_code=status.HTTP_201_CREATED,
+        )
+
+
+class PendingAssignmentsView(generics.ListAPIView):
+    """List pending assignments; admins see all, therapists see their requests"""
+    permission_classes = [IsAuthenticated]
+    serializer_class = TherapistPatientAssignmentSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == "ADMIN":
+            # Admins see all pending
+            return TherapistPatientAssignment.objects.filter(is_active=False)
+        elif user.role == "THERAPIST":
+            # Therapists see pending requests from their patients
+            return TherapistPatientAssignment.objects.filter(
+                therapist=user, is_active=False
+            ).select_related("patient")
+        return TherapistPatientAssignment.objects.none()
+
+
+class ActivateAssignmentView(APIView):
+    """Therapist or admin can activate a pending assignment"""
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, id):
+        try:
+            assignment = TherapistPatientAssignment.objects.get(id=id, is_active=False)
+        except TherapistPatientAssignment.DoesNotExist:
+            return APIResponse.send(
+                is_success=False,
+                message="Assignment not found or already active",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Only therapist of the assignment or admin can activate
+        if request.user.role != "ADMIN" and request.user.id != assignment.therapist.id:
+            return APIResponse.send(
+                is_success=False,
+                message="You do not have permission to activate this assignment",
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+
+        assignment.is_active = True
+        assignment.save(update_fields=["is_active"])
+
+        serializer = TherapistPatientAssignmentSerializer(assignment)
+        return APIResponse.send(
+            is_success=True,
+            message="Assignment activated",
             result=serializer.data,
             status_code=status.HTTP_200_OK,
         )

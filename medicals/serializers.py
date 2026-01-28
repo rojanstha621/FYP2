@@ -69,6 +69,32 @@ class TherapistPatientAssignmentSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "assigned_at"]
 
+    def validate(self, attrs):
+        therapist = attrs.get("therapist")
+        patient = attrs.get("patient")
+
+        # Basic role checks
+        if not therapist or getattr(therapist, "role", None) != "THERAPIST":
+            raise serializers.ValidationError({
+                "therapist": "Assigned user must be a therapist",
+            })
+        if not patient or getattr(patient, "role", None) != "PATIENT":
+            raise serializers.ValidationError({
+                "patient": "Assigned user must be a patient",
+            })
+
+        # Therapist must be approved
+        if not getattr(therapist, "is_approved_therapist", False):
+            raise serializers.ValidationError({
+                "therapist": "Therapist is not approved",
+            })
+
+        # Prevent self-assignment (paranoia check)
+        if therapist.id == patient.id:
+            raise serializers.ValidationError("Therapist and patient cannot be the same user")
+
+        return attrs
+
 
 class MyPatientsSerializer(serializers.ModelSerializer):
     """Serializer for therapists to view their assigned patients"""
@@ -102,3 +128,10 @@ class MyTherapistsSerializer(serializers.ModelSerializer):
             "is_active",
         ]
         read_only_fields = ["id", "assigned_at"]
+
+    def to_representation(self, instance):
+        # Only show approved therapists to patients
+        therapist = getattr(instance, "therapist", None)
+        if not therapist or not getattr(therapist, "is_approved_therapist", False):
+            return None
+        return super().to_representation(instance)

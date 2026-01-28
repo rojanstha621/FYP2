@@ -21,7 +21,8 @@ export const AuthProvider = ({ children }) => {
   const fetchCurrentUser = async () => {
     try {
       const response = await authAPI.getMe();
-      setUser(response.data.result);
+      // Store the flattened user object for simpler role checks
+      setUser(response.data.result.user);
       setError(null);
     } catch (err) {
       console.error('Failed to fetch user:', err);

@@ -7,3 +7,26 @@ class IsAdminRole(BasePermission):
         return bool(
             user and user.is_authenticated and getattr(user, "role", None) == "ADMIN"
         )
+
+
+class IsAdminOrStaff(BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(user and user.is_authenticated and (user.role == "ADMIN" or user.is_staff))
+
+
+class IsPatient(BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(user and user.is_authenticated and getattr(user, "role", None) == "PATIENT")
+
+
+class IsTherapistApproved(BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(
+            user
+            and user.is_authenticated
+            and getattr(user, "role", None) == "THERAPIST"
+            and getattr(user, "is_approved_therapist", False)
+        )

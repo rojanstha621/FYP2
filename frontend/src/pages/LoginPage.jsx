@@ -9,6 +9,7 @@ export const LoginPage = () => {
   const navigate = useNavigate();
   const { login, error, loading } = useAuth();
   const [formData, setFormData] = useState({ email: '', password: '' });
+  const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState('');
 
   const handleChange = (e) => {
@@ -49,21 +50,31 @@ export const LoginPage = () => {
               type="email"
               name="email"
               label="Email Address"
-              placeholder="you@example.com"
               value={formData.email}
               onChange={handleChange}
               disabled={loading}
             />
 
-            <Input
-              type="password"
-              name="password"
-              label="Password"
-              placeholder="••••••••"
-              value={formData.password}
-              onChange={handleChange}
-              disabled={loading}
-            />
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-palette-dark/80 mb-2">Password</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  className="w-full px-4 py-2 border border-palette-cream/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-palette-mauve focus:border-transparent"
+                  value={formData.password}
+                  onChange={handleChange}
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute inset-y-0 right-2 px-3 text-sm text-palette-dark/70 hover:text-palette-dark"
+                >
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
+            </div>
 
             <Button
               type="submit"

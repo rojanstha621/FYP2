@@ -13,6 +13,11 @@ class User(AbstractUser):
         PARENT = "PATIENT", _("Patient")
         BABYSITTER = "THERAPIST", _("Therapist")
 
+    class TherapistStatusChoices(models.TextChoices):
+        PENDING = "PENDING", _("Pending")
+        APPROVED = "APPROVED", _("Approved")
+        REJECTED = "REJECTED", _("Rejected")
+
     username = None
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True)
@@ -24,6 +29,24 @@ class User(AbstractUser):
         max_length=20,
         choices=RoleChoices.choices,
         help_text=_("Designates the role of the user in the system."),
+    )
+
+    # Therapist approval workflow
+    therapist_status = models.CharField(
+        max_length=20,
+        choices=TherapistStatusChoices.choices,
+        blank=True,
+        null=True,
+        help_text=_("Approval status for therapist accounts"),
+    )
+    is_therapist_approved = models.BooleanField(
+        default=False,
+        help_text=_("Convenience flag indicating therapist is approved"),
+    )
+    therapist_verified_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text=_("Timestamp when therapist was approved by admin"),
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -54,6 +77,13 @@ class User(AbstractUser):
     def get_full_name(self):
         return (
             f"{self.first_name} {self.last_name}" if self.last_name else self.first_name
+        )
+
+    @property
+    def is_approved_therapist(self):
+        return (
+            self.role == "THERAPIST"
+            and (self.therapist_status == self.TherapistStatusChoices.APPROVED)
         )
 
 

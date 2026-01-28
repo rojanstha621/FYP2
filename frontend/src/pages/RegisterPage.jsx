@@ -9,6 +9,8 @@ export const RegisterPage = () => {
   const navigate = useNavigate();
   const { register, error, loading } = useAuth();
   const [localError, setLocalError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     first_name: '',
@@ -75,7 +77,6 @@ export const RegisterPage = () => {
               type="email"
               name="email"
               label="Email Address"
-              placeholder="you@example.com"
               value={formData.email}
               onChange={handleChange}
               disabled={loading}
@@ -87,7 +88,6 @@ export const RegisterPage = () => {
                 type="text"
                 name="first_name"
                 label="First Name"
-                placeholder="John"
                 value={formData.first_name}
                 onChange={handleChange}
                 disabled={loading}
@@ -98,7 +98,6 @@ export const RegisterPage = () => {
                 type="text"
                 name="last_name"
                 label="Last Name"
-                placeholder="Doe"
                 value={formData.last_name}
                 onChange={handleChange}
                 disabled={loading}
@@ -109,7 +108,6 @@ export const RegisterPage = () => {
               type="tel"
               name="phone_number"
               label="Phone Number"
-              placeholder="+1 (555) 123-4567"
               value={formData.phone_number}
               onChange={handleChange}
               disabled={loading}
@@ -126,27 +124,49 @@ export const RegisterPage = () => {
               <option value="THERAPIST">Therapist</option>
             </Select>
 
-            <Input
-              type="password"
-              name="password"
-              label="Password"
-              placeholder="••••••••"
-              value={formData.password}
-              onChange={handleChange}
-              disabled={loading}
-              required
-            />
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-palette-dark/80 mb-2">Password</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  className="w-full px-4 py-2 border border-palette-cream/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-palette-mauve focus:border-transparent"
+                  value={formData.password}
+                  onChange={handleChange}
+                  disabled={loading}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute inset-y-0 right-2 px-3 text-sm text-palette-dark/70 hover:text-palette-dark"
+                >
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
+            </div>
 
-            <Input
-              type="password"
-              name="password_confirm"
-              label="Confirm Password"
-              placeholder="••••••••"
-              value={formData.password_confirm}
-              onChange={handleChange}
-              disabled={loading}
-              required
-            />
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-palette-dark/80 mb-2">Confirm Password</label>
+              <div className="relative">
+                <input
+                  type={showPasswordConfirm ? 'text' : 'password'}
+                  name="password_confirm"
+                  className="w-full px-4 py-2 border border-palette-cream/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-palette-mauve focus:border-transparent"
+                  value={formData.password_confirm}
+                  onChange={handleChange}
+                  disabled={loading}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordConfirm((prev) => !prev)}
+                  className="absolute inset-y-0 right-2 px-3 text-sm text-palette-dark/70 hover:text-palette-dark"
+                >
+                  {showPasswordConfirm ? 'Hide' : 'Show'}
+                </button>
+              </div>
+            </div>
 
             <Button
               type="submit"

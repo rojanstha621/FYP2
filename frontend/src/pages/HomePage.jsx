@@ -78,8 +78,8 @@ export const HomePage = () => {
   }
 
   // Redirect to role-specific dashboard
-  const userRole = user.role || (user.user && user.user.role);
-  const firstName = user.first_name || (user.user && user.user.first_name) || 'User';
+  const userRole = user.role;
+  const firstName = user.first_name || 'User';
 
   if (userRole === 'PATIENT') {
     return (
@@ -176,6 +176,16 @@ export const HomePage = () => {
           <Link to="/admin/users">
             <Button variant="primary" className="w-full">
               Manage Users
+            </Button>
+          </Link>
+        </Card>
+
+        <Card>
+          <h3 className="text-xl font-bold text-palette-mauve mb-3">Medical Records</h3>
+          <p className="text-palette-dark/60 mb-4">View all patient medical histories</p>
+          <Link to="/admin/medical-histories">
+            <Button variant="primary" className="w-full">
+              View Records
             </Button>
           </Link>
         </Card>

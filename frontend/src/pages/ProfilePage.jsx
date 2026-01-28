@@ -19,6 +19,15 @@ export const ProfilePage = () => {
     bio: '',
   });
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    old_password: '',
+    new_password: '',
+    confirm_password: '',
+  });
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -78,6 +87,38 @@ export const ProfilePage = () => {
       setError('Failed to upload profile picture');
     } finally {
       setUploadingImage(false);
+    }
+  };
+
+  const handlePasswordChange = (e) => {
+    setPasswordData({ ...passwordData, [e.target.name]: e.target.value });
+  };
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    if (passwordData.new_password !== passwordData.confirm_password) {
+      setError('New passwords do not match');
+      return;
+    }
+
+    if (passwordData.new_password.length < 6) {
+      setError('New password must be at least 6 characters long');
+      return;
+    }
+
+    try {
+      await authAPI.changePassword({
+        old_password: passwordData.old_password,
+        new_password: passwordData.new_password,
+      });
+      setSuccess('Password changed successfully');
+      setShowPasswordModal(false);
+      setPasswordData({ old_password: '', new_password: '', confirm_password: '' });
+    } catch (err) {
+      setError(err.response?.data?.old_password?.[0] || err.response?.data?.detail || 'Failed to change password');
     }
   };
 
@@ -185,7 +226,119 @@ export const ProfilePage = () => {
             </Button>
           </div>
         </form>
+
+        <div className="mt-8 pt-8 border-t border-palette-cream/40">
+          <h3 className="text-lg font-bold text-palette-dark mb-4">Security</h3>
+          <Button variant="secondary" onClick={() => setShowPasswordModal(true)}>
+            Change Password
+          </Button>
+        </div>
       </Card>
+
+      {/* Change Password Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <Card className="max-w-md w-full">
+            <button
+              onClick={() => {
+                setShowPasswordModal(false);
+                setPasswordData({ old_password: '', new_password: '', confirm_password: '' });
+                setError('');
+              }}
+              className="float-right text-2xl font-bold text-palette-dark/60 hover:text-palette-dark"
+            >
+              ✕
+            </button>
+
+            <h2 className="text-2xl font-bold text-palette-dark mb-6 clear-right">
+              Change Password
+            </h2>
+
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-palette-dark/80 mb-2">Current Password</label>
+                <div className="relative">
+                  <input
+                    type={showOldPassword ? 'text' : 'password'}
+                    name="old_password"
+                    className="w-full px-4 py-2 border border-palette-cream/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-palette-mauve focus:border-transparent"
+                    value={passwordData.old_password}
+                    onChange={handlePasswordChange}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowOldPassword((prev) => !prev)}
+                    className="absolute inset-y-0 right-2 px-3 text-sm text-palette-dark/70 hover:text-palette-dark"
+                  >
+                    {showOldPassword ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-palette-dark/80 mb-2">New Password</label>
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    name="new_password"
+                    className="w-full px-4 py-2 border border-palette-cream/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-palette-mauve focus:border-transparent"
+                    value={passwordData.new_password}
+                    onChange={handlePasswordChange}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword((prev) => !prev)}
+                    className="absolute inset-y-0 right-2 px-3 text-sm text-palette-dark/70 hover:text-palette-dark"
+                  >
+                    {showNewPassword ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-palette-dark/80 mb-2">Confirm New Password</label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    name="confirm_password"
+                    className="w-full px-4 py-2 border border-palette-cream/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-palette-mauve focus:border-transparent"
+                    value={passwordData.confirm_password}
+                    onChange={handlePasswordChange}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword((prev) => !prev)}
+                    className="absolute inset-y-0 right-2 px-3 text-sm text-palette-dark/70 hover:text-palette-dark"
+                  >
+                    {showConfirmPassword ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <Button type="submit" variant="primary" className="flex-1">
+                  Change Password
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={() => {
+                    setShowPasswordModal(false);
+                    setPasswordData({ old_password: '', new_password: '', confirm_password: '' });
+                    setError('');
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

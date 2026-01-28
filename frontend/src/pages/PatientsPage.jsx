@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { assignmentAPI } from '../services/api';
+import { assignmentAPI, medicalAPI } from '../services/api';
 import { Card, Button, Select, Textarea } from '../components/FormElements';
 import { Alert } from '../components/Alert';
 import { Spinner } from '../components/Spinner';
@@ -10,6 +10,8 @@ export const PatientsPage = () => {
   const [error, setError] = useState('');
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [showAssignForm, setShowAssignForm] = useState(false);
+  const [medicalHistory, setMedicalHistory] = useState(null);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   useEffect(() => {
     fetchPatients();
@@ -18,10 +20,11 @@ export const PatientsPage = () => {
   const fetchPatients = async () => {
     try {
       const response = await assignmentAPI.getAssignments();
+      const assignments = response.data.result || response.data || [];
       const uniquePatients = [];
       const patientIds = new Set();
 
-      response.data.result.forEach(assignment => {
+      assignments.forEach(assignment => {
         if (!patientIds.has(assignment.patient) && assignment.is_active) {
           patientIds.add(assignment.patient);
           uniquePatients.push(assignment);
@@ -33,6 +36,21 @@ export const PatientsPage = () => {
       setError('Failed to load patients');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchMedicalHistory = async (patientId) => {
+    setLoadingHistory(true);
+    setMedicalHistory(null);
+    try {
+      const response = await medicalAPI.getMedicalHistories();
+      const histories = response.data.result || response.data || [];
+      const patientHistory = histories.find(h => h.patient === patientId);
+      setMedicalHistory(patientHistory || null);
+    } catch (err) {
+      setError('Failed to load medical history');
+    } finally {
+      setLoadingHistory(false);
     }
   };
 
@@ -73,9 +91,29 @@ export const PatientsPage = () => {
               Assigned: {new Date(assignment.assigned_at).toLocaleDateString()}
             </p>
 
-            <Button variant="ghost" className="text-sm" onClick={() => setSelectedPatient(assignment)}>
-              View Details →
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                className="text-sm flex-1"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedPatient(assignment);
+                }}
+              >
+                View Details →
+              </Button>
+              <Button
+                variant="primary"
+                className="text-sm flex-1"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  fetchMedicalHistory(assignment.patient);
+                  setSelectedPatient(assignment);
+                }}
+              >
+                Medical History
+              </Button>
+            </div>
           </Card>
         ))}
       </div>
@@ -89,7 +127,8 @@ export const PatientsPage = () => {
         </Card>
       )}
 
-      {selectedPatient && (
+      {/* Detail Modal */}
+      {selectedPatient && !medicalHistory && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <Card className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <button
@@ -130,10 +169,119 @@ export const PatientsPage = () => {
             </div>
 
             <div className="flex gap-4">
-              <Button variant="primary" className="flex-1">
-                Create Exercise Plan
+              <Button
+                variant="primary"
+                className="flex-1"
+                onClick={() => fetchMedicalHistory(selectedPatient.patient)}
+              >
+                View Medical History
               </Button>
               <Button variant="secondary" className="flex-1" onClick={() => setSelectedPatient(null)}>
+                Close
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Medical History Modal */}
+      {selectedPatient && medicalHistory !== null && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <Card className="max-w-3xl w-full my-8">
+            <button
+              onClick={() => {
+                setMedicalHistory(null);
+                setSelectedPatient(null);
+              }}
+              className="float-right text-2xl font-bold text-palette-dark/60 hover:text-palette-dark"
+            >
+              ✕
+            </button>
+
+            <h2 className="text-3xl font-bold text-palette-dark mb-2 clear-right">
+              Medical History
+            </h2>
+            <p className="text-palette-dark/70 mb-6">
+              {selectedPatient.patient_details.first_name} {selectedPatient.patient_details.last_name}
+            </p>
+
+            {loadingHistory ? (
+              <div className="text-center py-8">
+                <Spinner />
+              </div>
+            ) : medicalHistory ? (
+              <div className="space-y-6">
+                <div className="p-4 bg-palette-cream/50 rounded-lg">
+                  <h3 className="text-lg font-semibold text-palette-dark mb-2">Past Injuries</h3>
+                  <p className="text-palette-dark/70 whitespace-pre-wrap">
+                    {medicalHistory.past_injuries || 'No past injuries recorded'}
+                  </p>
+                </div>
+
+                <div className="p-4 bg-palette-cream/50 rounded-lg">
+                  <h3 className="text-lg font-semibold text-palette-dark mb-2">Chronic Conditions</h3>
+                  <p className="text-palette-dark/70 whitespace-pre-wrap">
+                    {medicalHistory.chronic_conditions || 'No chronic conditions recorded'}
+                  </p>
+                </div>
+
+                <div className="p-4 bg-palette-cream/50 rounded-lg">
+                  <h3 className="text-lg font-semibold text-palette-dark mb-2">Surgeries</h3>
+                  <p className="text-palette-dark/70 whitespace-pre-wrap">
+                    {medicalHistory.surgeries || 'No surgeries recorded'}
+                  </p>
+                </div>
+
+                <div className="p-4 bg-palette-cream/50 rounded-lg">
+                  <h3 className="text-lg font-semibold text-palette-dark mb-2">Current Medications</h3>
+                  <p className="text-palette-dark/70 whitespace-pre-wrap">
+                    {medicalHistory.medications || 'No medications recorded'}
+                  </p>
+                </div>
+
+                <div className="p-4 bg-palette-cream/50 rounded-lg">
+                  <h3 className="text-lg font-semibold text-palette-dark mb-2">Allergies</h3>
+                  <p className="text-palette-dark/70 whitespace-pre-wrap">
+                    {medicalHistory.allergies || 'No allergies recorded'}
+                  </p>
+                </div>
+
+                <div className="p-4 bg-palette-cream/50 rounded-lg">
+                  <h3 className="text-lg font-semibold text-palette-dark mb-2">Current Symptoms</h3>
+                  <p className="text-palette-dark/70 whitespace-pre-wrap">
+                    {medicalHistory.current_symptoms || 'No symptoms recorded'}
+                  </p>
+                </div>
+
+                {medicalHistory.medical_report && (
+                  <div className="p-4 bg-palette-cream/50 rounded-lg">
+                    <h3 className="text-lg font-semibold text-palette-dark mb-2">Medical Report</h3>
+                    <a
+                      href={medicalHistory.medical_report}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-palette-mauve hover:text-palette-dark underline"
+                    >
+                      View Report Document
+                    </a>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-palette-dark/70">No medical history found for this patient</p>
+              </div>
+            )}
+
+            <div className="flex gap-4 pt-6 mt-6 border-t">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => {
+                  setMedicalHistory(null);
+                  setSelectedPatient(null);
+                }}
+              >
                 Close
               </Button>
             </div>

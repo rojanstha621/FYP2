@@ -28,9 +28,10 @@ export const MedicalHistoryPage = () => {
   const fetchMedicalHistory = async () => {
     try {
       const response = await medicalAPI.getMedicalHistories();
-      if (response.data.result && response.data.result.length > 0) {
-        setMedicalHistory(response.data.result[0]);
-        setFormData(response.data.result[0]);
+      const histories = response.data.result || response.data || [];
+      if (histories.length > 0) {
+        setMedicalHistory(histories[0]);
+        setFormData(histories[0]);
       }
     } catch (err) {
       setError('Failed to load medical history');
@@ -48,7 +49,7 @@ export const MedicalHistoryPage = () => {
     setError('');
 
     try {
-      const userId = user?.id || user?.user?.id;
+      const userId = user?.id;
       const submitData = {
         ...formData,
         patient: userId,
