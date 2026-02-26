@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "account",
     "medicals",
     "exercises",
+    "videos",
     "corsheaders",
 ]
 REST_FRAMEWORK = {

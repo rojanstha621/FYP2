@@ -65,6 +65,9 @@ export const Navigation = () => {
                   <Link to="/exercises" className="text-palette-dark hover:text-palette-mauve transition-all">
                     Exercises
                   </Link>
+                  <Link to="/videos" className="text-palette-dark hover:text-palette-mauve transition-all">
+                    Videos
+                  </Link>
                   <Link to="/medical-history" className="text-palette-dark hover:text-palette-mauve transition-all">
                     Medical History
                   </Link>
@@ -85,6 +88,9 @@ export const Navigation = () => {
                   <Link to="/assignments" className="text-palette-dark hover:text-palette-mauve transition-all">
                     Assignments
                   </Link>
+                  <Link to="/therapist/videos" className="text-palette-dark hover:text-palette-mauve transition-all">
+                    Videos
+                  </Link>
                 </>
               )}
 
@@ -104,6 +110,9 @@ export const Navigation = () => {
                   </Link>
                   <Link to="/admin/pending-assignments" className="text-palette-dark hover:text-palette-mauve transition-all">
                     Pending Requests
+                  </Link>
+                  <Link to="/admin/videos" className="text-palette-dark hover:text-palette-mauve transition-all">
+                    Videos
                   </Link>
                   <Link to="/admin/medical-histories" className="text-palette-dark hover:text-palette-mauve transition-all">
                     Medical Records

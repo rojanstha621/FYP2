@@ -22,6 +22,7 @@ from .serializers import (
     AdminUserDetailSerializer,
     AdminUserUpdateSerializer,
     TherapistSummarySerializer,
+    TherapistPublicDetailSerializer,
     PatientDashboardSerializer,
 )
 from .permissions import IsAdminRole
@@ -275,8 +276,8 @@ class ApprovedTherapistsListView(generics.ListAPIView):
 
 
 class ApprovedTherapistDetailView(APIView):
-    """Retrieve a single approved therapist's public summary (patients only)"""
-    permission_classes = [IsAuthenticated, IsPatient]
+    """Retrieve a single approved therapist's public summary"""
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, id):
         from .models import User

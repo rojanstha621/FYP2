@@ -33,11 +33,12 @@ urlpatterns = [
     # admin url
     path("users/", AdminUserListView.as_view(), name="admin-users-list"),
     path("users/<uuid:id>/", AdminUserDetailView.as_view(), name="admin-users-detail"),
+    # Therapist management - specific paths BEFORE parameterized paths
     path("therapists/pending/", PendingTherapistsListView.as_view(), name="therapists-pending"),
+    path("therapists/approved/", ApprovedTherapistsListView.as_view(), name="therapists-approved"),
     path("therapists/<uuid:id>/approve/", ApproveTherapistView.as_view(), name="therapists-approve"),
     path("therapists/<uuid:id>/reject/", RejectTherapistView.as_view(), name="therapists-reject"),
     path("therapists/<uuid:id>/", ApprovedTherapistDetailView.as_view(), name="therapist-detail"),
-    path("therapists/approved/", ApprovedTherapistsListView.as_view(), name="therapists-approved"),
     # Patient dashboard
     path("dashboard/patient/", PatientDashboardView.as_view(), name="patient-dashboard"),
 ]

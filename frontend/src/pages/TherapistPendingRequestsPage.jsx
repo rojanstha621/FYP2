@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { assignmentAPI } from '../services/api';
+import { assignmentAPI, medicalAPI } from '../services/api';
 import { Layout } from '../components/Layout';
 import { Alert } from '../components/Alert';
 import { Spinner } from '../components/Spinner';
@@ -10,6 +10,11 @@ export default function TherapistPendingRequestsPage() {
   const [success, setSuccess] = useState(null);
   const [requests, setRequests] = useState([]);
   const [approving, setApproving] = useState(null);
+  const [rejecting, setRejecting] = useState(null);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [medicalHistory, setMedicalHistory] = useState(null);
+  const [showMedicalModal, setShowMedicalModal] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
 
   useEffect(() => {
     fetchRequests();
@@ -27,17 +32,59 @@ export default function TherapistPendingRequestsPage() {
     }
   };
 
+  const viewMedicalHistory = async (patientId, patientName) => {
+    try {
+      const response = await medicalAPI.getMedicalHistories();
+      const data = Array.isArray(response.data) 
+        ? response.data 
+        : (response.data?.results || response.data?.result || response.data?.data || []);
+      
+      const patientHistory = data.filter(h => h.patient?.id === patientId || h.patient === patientId);
+      setMedicalHistory(patientHistory);
+      setSelectedPatient(patientName);
+      setShowMedicalModal(true);
+    } catch (err) {
+      setError('Failed to load medical history');
+    }
+  };
+
   const handleApprove = async (id) => {
     setApproving(id);
     try {
-      await assignmentAPI.activateAssignment(id);
-      setSuccess('Request approved');
+      const response = await assignmentAPI.activateAssignment(id);
+      setSuccess(response.data?.message || 'Request approved successfully');
       setError(null);
+      setConfirmAction(null);
       fetchRequests();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to approve request');
+      console.error('Approve error:', err.response?.data);
+      const errorMsg = err.response?.data?.message 
+        || err.response?.data?.error 
+        || err.message 
+        || 'Failed to approve request';
+      setError(errorMsg);
     } finally {
       setApproving(null);
+    }
+  };
+
+  const handleReject = async (id) => {
+    setRejecting(id);
+    try {
+      const response = await assignmentAPI.rejectAssignment(id);
+      setSuccess(response.data?.message || 'Request rejected successfully');
+      setError(null);
+      setConfirmAction(null);
+      fetchRequests();
+    } catch (err) {
+      console.error('Reject error:', err.response?.data);
+      const errorMsg = err.response?.data?.message 
+        || err.response?.data?.error 
+        || err.message 
+        || 'Failed to reject request';
+      setError(errorMsg);
+    } finally {
+      setRejecting(null);
     }
   };
 
@@ -55,28 +102,187 @@ export default function TherapistPendingRequestsPage() {
           <div className="bg-white rounded-lg shadow divide-y">
             {requests.length ? (
               requests.map((r) => (
-                <div key={r.id} className="p-4 flex items-center justify-between">
-                  <div>
-                    <div className="font-semibold">
-                      {r.patient_details?.first_name} {r.patient_details?.last_name} - Assignment Request
+                <div key={r.id} className="p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                          <span className="text-lg font-semibold text-indigo-600">
+                            {r.patient_details?.first_name?.[0]}{r.patient_details?.last_name?.[0]}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="font-semibold text-lg text-gray-900">
+                            {r.patient_details?.first_name} {r.patient_details?.last_name}
+                          </div>
+                          <div className="text-sm text-gray-600">{r.patient_details?.email}</div>
+                        </div>
+                      </div>
+                      
+                      {r.patient_details?.phone_number && (
+                        <div className="text-sm text-gray-600 ml-15">
+                          <span className="font-medium">Phone:</span> {r.patient_details.phone_number}
+                        </div>
+                      )}
+
+                      {r.created_at && (
+                        <div className="text-xs text-gray-400 ml-15 mt-2">
+                          Requested on {new Date(r.created_at).toLocaleDateString()} at {new Date(r.created_at).toLocaleTimeString()}
+                        </div>
+                      )}
                     </div>
-                    <div className="text-sm text-gray-600 mt-1">{r.patient_details?.email}</div>
-                    {r.patient_details?.phone_number && (
-                      <div className="text-sm text-gray-600">{r.patient_details?.phone_number}</div>
-                    )}
+
+                    <div className="flex flex-col gap-2">
+                      <button
+                        onClick={() => viewMedicalHistory(
+                          r.patient_details?.id || r.patient,
+                          `${r.patient_details?.first_name} ${r.patient_details?.last_name}`
+                        )}
+                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition text-sm whitespace-nowrap"
+                      >
+                        View Medical History
+                      </button>
+                      <button
+                        onClick={() => setConfirmAction({ 
+                          type: 'approve', 
+                          id: r.id, 
+                          patientName: `${r.patient_details?.first_name} ${r.patient_details?.last_name}` 
+                        })}
+                        disabled={approving === r.id}
+                        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition text-sm disabled:opacity-50 whitespace-nowrap"
+                      >
+                        {approving === r.id ? 'Accepting...' : 'Accept Request'}
+                      </button>
+                      <button
+                        onClick={() => setConfirmAction({ 
+                          type: 'reject', 
+                          id: r.id, 
+                          patientName: `${r.patient_details?.first_name} ${r.patient_details?.last_name}` 
+                        })}
+                        disabled={rejecting === r.id}
+                        className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition text-sm disabled:opacity-50 whitespace-nowrap"
+                      >
+                        {rejecting === r.id ? 'Rejecting...' : 'Reject Request'}
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => handleApprove(r.id)}
-                    disabled={approving === r.id}
-                    className="btn-primary"
-                  >
-                    {approving === r.id ? 'Approving...' : 'Approve'}
-                  </button>
                 </div>
               ))
             ) : (
-              <p className="p-4 text-gray-600">No pending requests from patients.</p>
+              <div className="p-8 text-center">
+                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p className="mt-4 text-lg text-gray-500">No pending requests</p>
+                <p className="mt-2 text-sm text-gray-400">When patients request to work with you, they will appear here</p>
+              </div>
             )}
+          </div>
+        )}
+
+        {/* Confirmation Modal */}
+        {confirmAction && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold mb-4">
+                {confirmAction.type === 'approve' ? 'Confirm Acceptance' : 'Confirm Rejection'}
+              </h3>
+              <p className="text-gray-600 mb-6">
+                {confirmAction.type === 'approve' 
+                  ? `Are you sure you want to accept ${confirmAction.patientName} as your patient? You will be able to assign exercises and track their progress.`
+                  : `Are you sure you want to reject the request from ${confirmAction.patientName}? This action cannot be undone.`
+                }
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setConfirmAction(null)}
+                  className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => confirmAction.type === 'approve' ? handleApprove(confirmAction.id) : handleReject(confirmAction.id)}
+                  className={`px-4 py-2 rounded text-white transition ${
+                    confirmAction.type === 'approve' 
+                      ? 'bg-green-600 hover:bg-green-700' 
+                      : 'bg-red-600 hover:bg-red-700'
+                  }`}
+                >
+                  {confirmAction.type === 'approve' ? 'Accept' : 'Reject'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Medical History Modal */}
+        {showMedicalModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
+            <div className="bg-white rounded-lg p-6 max-w-3xl w-full mx-4 my-8 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold">Medical History - {selectedPatient}</h3>
+                <button
+                  onClick={() => {
+                    setShowMedicalModal(false);
+                    setMedicalHistory(null);
+                    setSelectedPatient(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                >
+                  ×
+                </button>
+              </div>
+              
+              {medicalHistory && medicalHistory.length > 0 ? (
+                <div className="space-y-4">
+                  {medicalHistory.map((history) => (
+                    <div key={history.id} className="border rounded-lg p-4 bg-gray-50">
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="font-semibold">Condition:</span>
+                          <p className="text-gray-700">{history.diagnosis || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <span className="font-semibold">Height:</span>
+                          <p className="text-gray-700">{history.height ? `${history.height} cm` : 'N/A'}</p>
+                        </div>
+                        <div>
+                          <span className="font-semibold">Weight:</span>
+                          <p className="text-gray-700">{history.weight ? `${history.weight} kg` : 'N/A'}</p>
+                        </div>
+                        <div>
+                          <span className="font-semibold">Blood Pressure:</span>
+                          <p className="text-gray-700">{history.blood_pressure || 'N/A'}</p>
+                        </div>
+                        {history.allergies && (
+                          <div className="col-span-2">
+                            <span className="font-semibold">Allergies:</span>
+                            <p className="text-gray-700">{history.allergies}</p>
+                          </div>
+                        )}
+                        {history.current_medications && (
+                          <div className="col-span-2">
+                            <span className="font-semibold">Current Medications:</span>
+                            <p className="text-gray-700">{history.current_medications}</p>
+                          </div>
+                        )}
+                        {history.notes && (
+                          <div className="col-span-2">
+                            <span className="font-semibold">Notes:</span>
+                            <p className="text-gray-700">{history.notes}</p>
+                          </div>
+                        )}
+                        <div className="col-span-2 text-xs text-gray-500">
+                          Updated: {new Date(history.updated_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center py-8">No medical history available for this patient</p>
+              )}
+            </div>
           </div>
         )}
       </div>

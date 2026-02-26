@@ -25,7 +25,9 @@ export default function TherapistDetailPage() {
         setAssignments(assignmentsRes.data.result || assignmentsRes.data || []);
         setError(null);
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to load therapist');
+        console.error('Failed to load therapist:', err.response?.data || err.message);
+        const errorMsg = err.response?.data?.message || err.response?.data?.detail || err.message || 'Failed to load therapist';
+        setError(errorMsg);
       } finally {
         setLoading(false);
       }
@@ -48,7 +50,9 @@ export default function TherapistDetailPage() {
       const res = await assignmentAPI.getAssignments();
       setAssignments(res.data.result || res.data || []);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to request assignment');
+      console.error('Failed to request assignment:', err.response?.data || err.message);
+      const errorMsg = err.response?.data?.message || err.response?.data?.detail || err.message || 'Failed to request assignment';
+      setError(errorMsg);
     } finally {
       setRequesting(false);
     }

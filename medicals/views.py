@@ -581,3 +581,35 @@ class ActivateAssignmentView(APIView):
             result=serializer.data,
             status_code=status.HTTP_200_OK,
         )
+
+
+class RejectAssignmentView(APIView):
+    """Therapist or admin can reject/delete a pending assignment request"""
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, id):
+        try:
+            assignment = TherapistPatientAssignment.objects.get(id=id, is_active=False)
+        except TherapistPatientAssignment.DoesNotExist:
+            return APIResponse.send(
+                is_success=False,
+                message="Assignment not found or already active",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Only therapist of the assignment or admin can reject
+        if request.user.role != "ADMIN" and request.user.id != assignment.therapist.id:
+            return APIResponse.send(
+                is_success=False,
+                message="You do not have permission to reject this assignment",
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+
+        patient_email = assignment.patient.email
+        assignment.delete()
+
+        return APIResponse.send(
+            is_success=True,
+            message=f"Assignment request from {patient_email} has been rejected",
+            status_code=status.HTTP_200_OK,
+        )

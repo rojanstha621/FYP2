@@ -107,6 +107,8 @@ export const assignmentAPI = {
     apiClient.get('/api/medicals/assignments/pending/'),
   activateAssignment: (id) =>
     apiClient.patch(`/api/medicals/assignments/${id}/activate/`),
+  rejectAssignment: (id) =>
+    apiClient.delete(`/api/medicals/assignments/${id}/reject/`),
 };
 
 // Admin API
@@ -144,6 +146,55 @@ export const exerciseAPI = {
 export const therapistAPI = {
   getApproved: () => apiClient.get('/api/account/therapists/approved/'),
   getById: (id) => apiClient.get(`/api/account/therapists/${id}/`),
+};
+
+// Video API
+export const videoAPI = {
+  // Admin endpoints - full video management
+  getVideos: (params) =>
+    apiClient.get('/api/videos/videos/', { params }),
+  getVideo: (id) =>
+    apiClient.get(`/api/videos/videos/${id}/`),
+  createVideo: (data) =>
+    apiClient.post('/api/videos/videos/', data),
+  updateVideo: (id, data) =>
+    apiClient.patch(`/api/videos/videos/${id}/`, data),
+  deleteVideo: (id) =>
+    apiClient.delete(`/api/videos/videos/${id}/`),
+  toggleVideoActive: (id) =>
+    apiClient.post(`/api/videos/videos/${id}/toggle_active/`),
+  
+  // Therapist endpoints - browse active videos
+  getActiveVideos: (params) =>
+    apiClient.get('/api/videos/active-videos/', { params }),
+  getActiveVideo: (id) =>
+    apiClient.get(`/api/videos/active-videos/${id}/`),
+  
+  // Therapist endpoints - video assignments
+  getAssignments: (params) =>
+    apiClient.get('/api/videos/assignments/', { params }),
+  getAssignment: (id) =>
+    apiClient.get(`/api/videos/assignments/${id}/`),
+  createAssignment: (data) =>
+    apiClient.post('/api/videos/assignments/', data),
+  updateAssignment: (id, data) =>
+    apiClient.patch(`/api/videos/assignments/${id}/`, data),
+  deleteAssignment: (id) =>
+    apiClient.delete(`/api/videos/assignments/${id}/`),
+  getMyAssignments: (params) =>
+    apiClient.get('/api/videos/assignments/my_assignments/', { params }),
+  getAssignmentsByPatient: () =>
+    apiClient.get('/api/videos/assignments/by_patient/'),
+  
+  // Patient endpoints - view assigned videos
+  getMyVideos: (params) =>
+    apiClient.get('/api/videos/my-videos/', { params }),
+  getMyVideo: (id) =>
+    apiClient.get(`/api/videos/my-videos/${id}/`),
+  markVideoViewed: (id) =>
+    apiClient.post(`/api/videos/my-videos/${id}/mark_viewed/`),
+  getVideoStatistics: () =>
+    apiClient.get('/api/videos/my-videos/statistics/'),
 };
 
 export default apiClient;

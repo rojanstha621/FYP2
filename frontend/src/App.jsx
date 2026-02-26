@@ -23,16 +23,19 @@ import AdminPendingTherapistsPage from './pages/AdminPendingTherapistsPage';
 import TherapistPendingRequestsPage from './pages/TherapistPendingRequestsPage';
 import { ProgressPage } from './pages/ProgressPage';
 import PatientDashboardPage from './pages/PatientDashboardPage';
+import PatientVideosPage from './pages/PatientVideosPage';
 
 // Therapist Pages
 import { PatientsPage } from './pages/PatientsPage';
 import { AssignmentsPage } from './pages/AssignmentsPage';
+import TherapistVideosPage from './pages/TherapistVideosPage';
 
 // Admin Pages
 import { AdminUsersPage } from './pages/AdminUsersPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { AssignmentsPage as AdminAssignmentsPage } from './pages/AssignmentsPage';
 import { AdminMedicalHistoriesPage } from './pages/AdminMedicalHistoriesPage';
+import AdminVideosPage from './pages/AdminVideosPage';
 
 function App() {
   return (
@@ -130,6 +133,14 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/videos"
+                element={
+                  <ProtectedRoute requiredRole="PATIENT">
+                    <PatientVideosPage />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Therapist Routes */}
               <Route
@@ -137,6 +148,14 @@ function App() {
                 element={
                   <ProtectedRoute requiredRole="THERAPIST">
                     <PatientsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/therapist/videos"
+                element={
+                  <ProtectedRoute requiredRole="THERAPIST">
+                    <TherapistVideosPage />
                   </ProtectedRoute>
                 }
               />
@@ -173,6 +192,14 @@ function App() {
                 element={
                   <ProtectedRoute requiredRole="ADMIN">
                     <AdminUsersPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/videos"
+                element={
+                  <ProtectedRoute requiredRole="ADMIN">
+                    <AdminVideosPage />
                   </ProtectedRoute>
                 }
               />
