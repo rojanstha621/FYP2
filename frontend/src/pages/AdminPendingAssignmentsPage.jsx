@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { assignmentAPI } from '../services/api';
-import { Layout } from '../components/Layout';
 import { Alert } from '../components/Alert';
 import { Spinner } from '../components/Spinner';
 
@@ -42,7 +41,6 @@ export default function AdminPendingAssignmentsPage() {
   };
 
   return (
-    <Layout>
       <div className="max-w-7xl mx-auto px-4 py-6">
         <h1 className="text-3xl font-bold mb-6">Pending Assignment Requests</h1>
 
@@ -82,6 +80,5 @@ export default function AdminPendingAssignmentsPage() {
           </div>
         )}
       </div>
-    </Layout>
   );
 }

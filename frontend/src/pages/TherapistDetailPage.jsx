@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { therapistAPI, assignmentAPI, medicalAPI } from '../services/api';
-import { Layout } from '../components/Layout';
 import { Alert } from '../components/Alert';
 import { Spinner } from '../components/Spinner';
 
@@ -59,10 +58,9 @@ export default function TherapistDetailPage() {
   };
 
   return (
-    <Layout>
       <div className="max-w-3xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold">Therapist Details</h1>
+          <h1 className="text-3xl font-bold text-palette-dark">Therapist Details</h1>
           <Link to="/therapists" className="text-palette-mauve hover:underline">Back to list</Link>
         </div>
 
@@ -73,7 +71,7 @@ export default function TherapistDetailPage() {
         {loading ? (
           <Spinner />
         ) : therapist ? (
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-palette-cream rounded-lg shadow p-6 border-l-4 border-palette-mauve">
             <div className="flex items-start gap-4">
               {therapist.profile?.profile_picture && (
                 <img
@@ -83,15 +81,15 @@ export default function TherapistDetailPage() {
                 />
               )}
               <div className="flex-1">
-                <div className="text-xl font-semibold">
+                <div className="text-xl font-semibold text-palette-dark">
                   {therapist.first_name} {therapist.last_name}
                 </div>
-                <div className="mt-2 text-gray-700">{therapist.email}</div>
+                <div className="mt-2 text-palette-dark/70">{therapist.email}</div>
                 {therapist.phone_number && (
-                  <div className="mt-1 text-gray-700">{therapist.phone_number}</div>
+                  <div className="mt-1 text-palette-dark/80">{therapist.phone_number}</div>
                 )}
                 {therapist.profile?.bio && (
-                  <div className="mt-3 text-gray-700 whitespace-pre-line">{therapist.profile.bio}</div>
+                  <div className="mt-3 text-palette-dark/80 whitespace-pre-line">{therapist.profile.bio}</div>
                 )}
               </div>
             </div>
@@ -115,9 +113,8 @@ export default function TherapistDetailPage() {
             </div>
           </div>
         ) : (
-          <p className="text-gray-600">No therapist details found.</p>
+          <p className="text-palette-dark/70">No therapist details found.</p>
         )}
       </div>
-    </Layout>
   );
 }

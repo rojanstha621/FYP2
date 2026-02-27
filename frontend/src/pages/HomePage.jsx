@@ -104,20 +104,10 @@ export const HomePage = () => {
 
           <Card>
             <h3 className="text-xl font-bold text-palette-mauve mb-3">My Exercises</h3>
-            <p className="text-palette-dark/60 mb-4">View and complete assigned exercise routines</p>
+            <p className="text-palette-dark/60 mb-4">View exercise routines and educational content</p>
             <Link to="/exercises">
               <Button variant="primary" className="w-full">
-                Start Exercise
-              </Button>
-            </Link>
-          </Card>
-
-          <Card>
-            <h3 className="text-xl font-bold text-palette-mauve mb-3">My Progress</h3>
-            <p className="text-palette-dark/60 mb-4">Track your rehabilitation progress over time</p>
-            <Link to="/progress">
-              <Button variant="primary" className="w-full">
-                View Progress
+                View Exercises
               </Button>
             </Link>
           </Card>
@@ -176,16 +166,6 @@ export const HomePage = () => {
           <Link to="/admin/users">
             <Button variant="primary" className="w-full">
               Manage Users
-            </Button>
-          </Link>
-        </Card>
-
-        <Card>
-          <h3 className="text-xl font-bold text-palette-mauve mb-3">Medical Records</h3>
-          <p className="text-palette-dark/60 mb-4">View all patient medical histories</p>
-          <Link to="/admin/medical-histories">
-            <Button variant="primary" className="w-full">
-              View Records
             </Button>
           </Link>
         </Card>

@@ -273,7 +273,7 @@ export const PatientsPage = () => {
               </div>
             )}
 
-            <div className="flex gap-4 pt-6 mt-6 border-t">
+            <div className="flex gap-4 pt-6 mt-6 border-t border-palette-mauve/30">
               <Button
                 variant="secondary"
                 className="flex-1"

@@ -37,9 +37,9 @@ export const Navigation = () => {
 
   const getRoleBadge = (role) => {
     const colors = {
-      ADMIN: 'bg-purple-100 text-purple-800',
-      PATIENT: 'bg-blue-100 text-blue-800',
-      THERAPIST: 'bg-green-100 text-green-800',
+      ADMIN: 'bg-palette-mauve/20 text-palette-mauve border border-palette-mauve',
+      PATIENT: 'bg-palette-blush/30 text-palette-dark border border-palette-blush',
+      THERAPIST: 'bg-green-100 text-green-800 border border-green-200',
     };
     return colors[role] || 'bg-palette-beige text-palette-dark';
   };
@@ -65,14 +65,8 @@ export const Navigation = () => {
                   <Link to="/exercises" className="text-palette-dark hover:text-palette-mauve transition-all">
                     Exercises
                   </Link>
-                  <Link to="/videos" className="text-palette-dark hover:text-palette-mauve transition-all">
-                    Videos
-                  </Link>
                   <Link to="/medical-history" className="text-palette-dark hover:text-palette-mauve transition-all">
                     Medical History
-                  </Link>
-                  <Link to="/progress" className="text-palette-dark hover:text-palette-mauve transition-all">
-                    Progress
                   </Link>
                 </>
               )}
@@ -105,17 +99,8 @@ export const Navigation = () => {
                   <Link to="/admin/pending-therapists" className="text-palette-dark hover:text-palette-mauve transition-all">
                     Pending Therapists
                   </Link>
-                  <Link to="/admin/assignments" className="text-palette-dark hover:text-palette-mauve transition-all">
-                    Assignments
-                  </Link>
-                  <Link to="/admin/pending-assignments" className="text-palette-dark hover:text-palette-mauve transition-all">
-                    Pending Requests
-                  </Link>
                   <Link to="/admin/videos" className="text-palette-dark hover:text-palette-mauve transition-all">
                     Videos
-                  </Link>
-                  <Link to="/admin/medical-histories" className="text-palette-dark hover:text-palette-mauve transition-all">
-                    Medical Records
                   </Link>
                 </>
               )}

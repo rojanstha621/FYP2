@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { assignmentAPI, medicalAPI } from '../services/api';
-import { Layout } from '../components/Layout';
 import { Alert } from '../components/Alert';
 import { Spinner } from '../components/Spinner';
 
@@ -89,7 +88,6 @@ export default function TherapistPendingRequestsPage() {
   };
 
   return (
-    <Layout>
       <div className="max-w-7xl mx-auto px-4 py-6">
         <h1 className="text-3xl font-bold mb-6">Pending Patient Requests</h1>
 
@@ -99,7 +97,7 @@ export default function TherapistPendingRequestsPage() {
         {loading ? (
           <Spinner />
         ) : (
-          <div className="bg-white rounded-lg shadow divide-y">
+          <div className="bg-palette-cream rounded-lg shadow divide-y">
             {requests.length ? (
               requests.map((r) => (
                 <div key={r.id} className="p-5">
@@ -112,21 +110,21 @@ export default function TherapistPendingRequestsPage() {
                           </span>
                         </div>
                         <div>
-                          <div className="font-semibold text-lg text-gray-900">
+                          <div className="font-semibold text-lg text-palette-dark">
                             {r.patient_details?.first_name} {r.patient_details?.last_name}
                           </div>
-                          <div className="text-sm text-gray-600">{r.patient_details?.email}</div>
+                          <div className="text-sm text-palette-dark/70">{r.patient_details?.email}</div>
                         </div>
                       </div>
                       
                       {r.patient_details?.phone_number && (
-                        <div className="text-sm text-gray-600 ml-15">
+                        <div className="text-sm text-palette-dark/70 ml-15">
                           <span className="font-medium">Phone:</span> {r.patient_details.phone_number}
                         </div>
                       )}
 
                       {r.created_at && (
-                        <div className="text-xs text-gray-400 ml-15 mt-2">
+                        <div className="text-xs text-palette-dark/50 ml-15 mt-2">
                           Requested on {new Date(r.created_at).toLocaleDateString()} at {new Date(r.created_at).toLocaleTimeString()}
                         </div>
                       )}
@@ -138,7 +136,7 @@ export default function TherapistPendingRequestsPage() {
                           r.patient_details?.id || r.patient,
                           `${r.patient_details?.first_name} ${r.patient_details?.last_name}`
                         )}
-                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition text-sm whitespace-nowrap"
+                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-palette-mauve transition text-sm whitespace-nowrap"
                       >
                         View Medical History
                       </button>
@@ -170,11 +168,11 @@ export default function TherapistPendingRequestsPage() {
               ))
             ) : (
               <div className="p-8 text-center">
-                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="mx-auto h-12 w-12 text-palette-dark/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <p className="mt-4 text-lg text-gray-500">No pending requests</p>
-                <p className="mt-2 text-sm text-gray-400">When patients request to work with you, they will appear here</p>
+                <p className="mt-4 text-lg text-palette-dark/60">No pending requests</p>
+                <p className="mt-2 text-sm text-palette-dark/50">When patients request to work with you, they will appear here</p>
               </div>
             )}
           </div>
@@ -183,11 +181,11 @@ export default function TherapistPendingRequestsPage() {
         {/* Confirmation Modal */}
         {confirmAction && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="bg-palette-cream rounded-lg p-6 max-w-md w-full mx-4">
               <h3 className="text-lg font-semibold mb-4">
                 {confirmAction.type === 'approve' ? 'Confirm Acceptance' : 'Confirm Rejection'}
               </h3>
-              <p className="text-gray-600 mb-6">
+              <p className="text-palette-dark/70 mb-6">
                 {confirmAction.type === 'approve' 
                   ? `Are you sure you want to accept ${confirmAction.patientName} as your patient? You will be able to assign exercises and track their progress.`
                   : `Are you sure you want to reject the request from ${confirmAction.patientName}? This action cannot be undone.`
@@ -196,7 +194,7 @@ export default function TherapistPendingRequestsPage() {
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={() => setConfirmAction(null)}
-                  className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition"
+                  className="px-4 py-2 border border-palette-mauve rounded hover:bg-palette-beige transition"
                 >
                   Cancel
                 </button>
@@ -218,7 +216,7 @@ export default function TherapistPendingRequestsPage() {
         {/* Medical History Modal */}
         {showMedicalModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
-            <div className="bg-white rounded-lg p-6 max-w-3xl w-full mx-4 my-8 max-h-[90vh] overflow-y-auto">
+            <div className="bg-palette-cream rounded-lg p-6 max-w-3xl w-full mx-4 my-8 max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-semibold">Medical History - {selectedPatient}</h3>
                 <button
@@ -227,7 +225,7 @@ export default function TherapistPendingRequestsPage() {
                     setMedicalHistory(null);
                     setSelectedPatient(null);
                   }}
-                  className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                  className="text-palette-dark/50 hover:text-palette-dark/70 text-2xl leading-none"
                 >
                   ×
                 </button>
@@ -236,43 +234,43 @@ export default function TherapistPendingRequestsPage() {
               {medicalHistory && medicalHistory.length > 0 ? (
                 <div className="space-y-4">
                   {medicalHistory.map((history) => (
-                    <div key={history.id} className="border rounded-lg p-4 bg-gray-50">
+                    <div key={history.id} className="border rounded-lg p-4 bg-palette-beige">
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div>
                           <span className="font-semibold">Condition:</span>
-                          <p className="text-gray-700">{history.diagnosis || 'N/A'}</p>
+                          <p className="text-palette-dark/80">{history.diagnosis || 'N/A'}</p>
                         </div>
                         <div>
                           <span className="font-semibold">Height:</span>
-                          <p className="text-gray-700">{history.height ? `${history.height} cm` : 'N/A'}</p>
+                          <p className="text-palette-dark/80">{history.height ? `${history.height} cm` : 'N/A'}</p>
                         </div>
                         <div>
                           <span className="font-semibold">Weight:</span>
-                          <p className="text-gray-700">{history.weight ? `${history.weight} kg` : 'N/A'}</p>
+                          <p className="text-palette-dark/80">{history.weight ? `${history.weight} kg` : 'N/A'}</p>
                         </div>
                         <div>
                           <span className="font-semibold">Blood Pressure:</span>
-                          <p className="text-gray-700">{history.blood_pressure || 'N/A'}</p>
+                          <p className="text-palette-dark/80">{history.blood_pressure || 'N/A'}</p>
                         </div>
                         {history.allergies && (
                           <div className="col-span-2">
                             <span className="font-semibold">Allergies:</span>
-                            <p className="text-gray-700">{history.allergies}</p>
+                            <p className="text-palette-dark/80">{history.allergies}</p>
                           </div>
                         )}
                         {history.current_medications && (
                           <div className="col-span-2">
                             <span className="font-semibold">Current Medications:</span>
-                            <p className="text-gray-700">{history.current_medications}</p>
+                            <p className="text-palette-dark/80">{history.current_medications}</p>
                           </div>
                         )}
                         {history.notes && (
                           <div className="col-span-2">
                             <span className="font-semibold">Notes:</span>
-                            <p className="text-gray-700">{history.notes}</p>
+                            <p className="text-palette-dark/80">{history.notes}</p>
                           </div>
                         )}
-                        <div className="col-span-2 text-xs text-gray-500">
+                        <div className="col-span-2 text-xs text-palette-dark/60">
                           Updated: {new Date(history.updated_at).toLocaleDateString()}
                         </div>
                       </div>
@@ -280,12 +278,11 @@ export default function TherapistPendingRequestsPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500 text-center py-8">No medical history available for this patient</p>
+                <p className="text-palette-dark/60 text-center py-8">No medical history available for this patient</p>
               )}
             </div>
           </div>
         )}
       </div>
-    </Layout>
   );
 }

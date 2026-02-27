@@ -169,8 +169,8 @@ export default function TherapistVideosPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Video Library</h1>
-        <p className="text-gray-600 mt-2">Browse educational videos and assign them to your patients</p>
+        <h1 className="text-3xl font-bold text-palette-dark">Video Library</h1>
+        <p className="text-palette-dark/70 mt-2">Browse educational videos and assign them to your patients</p>
       </div>
 
       {/* Alerts */}
@@ -183,14 +183,14 @@ export default function TherapistVideosPage() {
 
       {/* Tabs */}
       <div className="mb-6">
-        <div className="border-b border-gray-200">
+        <div className="border-b border-palette-mauve/30">
           <nav className="-mb-px flex space-x-8">
             <button
               onClick={() => setActiveTab('browse')}
               className={`${
                 activeTab === 'browse'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-palette-mauve text-palette-mauve'
+                  : 'border-transparent text-palette-dark/60 hover:text-palette-dark/80 hover:border-palette-mauve'
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
             >
               Browse Videos
@@ -199,8 +199,8 @@ export default function TherapistVideosPage() {
               onClick={() => setActiveTab('assignments')}
               className={`${
                 activeTab === 'assignments'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-palette-mauve text-palette-mauve'
+                  : 'border-transparent text-palette-dark/60 hover:text-palette-dark/80 hover:border-palette-mauve'
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
             >
               My Assignments
@@ -210,11 +210,11 @@ export default function TherapistVideosPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
+      <div className="bg-palette-cream p-4 rounded-lg shadow-sm mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {activeTab === 'browse' ? (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-palette-dark/80 mb-2">
                 Search Videos
               </label>
               <input
@@ -222,18 +222,18 @@ export default function TherapistVideosPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search by title..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
               />
             </div>
           ) : (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-palette-dark/80 mb-2">
                 Filter by Patient
               </label>
               <select
                 value={patientFilter}
                 onChange={(e) => setPatientFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
               >
                 <option value="">All Patients</option>
                 {myPatients.map(patient => (
@@ -256,13 +256,13 @@ export default function TherapistVideosPage() {
         // Videos Grid
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {videos.length === 0 ? (
-            <div className="col-span-full text-center py-12 text-gray-500">
+            <div className="col-span-full text-center py-12 text-palette-dark/60">
               No videos available
             </div>
           ) : (
             videos.map((video) => (
-              <div key={video.id} className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-                <div className="aspect-video bg-gray-200 relative group cursor-pointer" onClick={() => handleViewDetails(video)}>
+              <div key={video.id} className="bg-palette-cream rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                <div className="aspect-video bg-palette-cream/60 relative group cursor-pointer" onClick={() => handleViewDetails(video)}>
                   <img
                     src={video.thumbnail_url}
                     alt={video.title}
@@ -273,17 +273,17 @@ export default function TherapistVideosPage() {
                   </div>
                 </div>
                 <div className="p-4">
-                  <h3 className="font-semibold text-gray-900 mb-2">{video.title}</h3>
-                  <p className="text-sm text-gray-600 line-clamp-2 mb-4">
+                  <h3 className="font-semibold text-palette-dark mb-2">{video.title}</h3>
+                  <p className="text-sm text-palette-dark/70 line-clamp-2 mb-4">
                     {video.description}
                   </p>
                   <div className="flex justify-between items-center">
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-palette-dark/60">
                       {video.assignment_count || 0} assignments
                     </span>
                     <button
                       onClick={() => handleAssignClick(video)}
-                      className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 flex items-center gap-1"
+                      className="bg-palette-mauve text-white px-3 py-1 rounded text-sm hover:bg-palette-dark flex items-center gap-1"
                     >
                       <FiUserPlus className="text-sm" /> Assign
                     </button>
@@ -295,40 +295,40 @@ export default function TherapistVideosPage() {
         </div>
       ) : (
         // Assignments Table
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+        <div className="bg-palette-cream rounded-lg shadow-sm overflow-hidden">
+          <table className="min-w-full divide-y divide-palette-mauve/30">
+            <thead className="bg-palette-beige">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-palette-dark/60 uppercase tracking-wider">
                   Video
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-palette-dark/60 uppercase tracking-wider">
                   Patient
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-palette-dark/60 uppercase tracking-wider">
                   Notes
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-palette-dark/60 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-palette-dark/60 uppercase tracking-wider">
                   Assigned
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-palette-dark/60 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-palette-cream divide-y divide-palette-mauve/30">
               {assignments.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan="6" className="px-6 py-4 text-center text-palette-dark/60">
                     No assignments found
                   </td>
                 </tr>
               ) : (
                 assignments.map((assignment) => (
-                  <tr key={assignment.id} className="hover:bg-gray-50">
+                  <tr key={assignment.id} className="hover:bg-palette-beige">
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <img
@@ -337,22 +337,22 @@ export default function TherapistVideosPage() {
                           className="h-12 w-20 object-cover rounded"
                         />
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-palette-dark">
                             {assignment.video_details.title}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
+                      <div className="text-sm text-palette-dark">
                         {assignment.patient_details?.first_name} {assignment.patient_details?.last_name}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-palette-dark/60">
                         {assignment.patient_details?.email}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 max-w-xs truncate">
+                      <div className="text-sm text-palette-dark max-w-xs truncate">
                         {assignment.notes || '-'}
                       </div>
                     </td>
@@ -367,13 +367,13 @@ export default function TherapistVideosPage() {
                         {assignment.viewed ? 'Viewed' : 'Pending'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-palette-dark/60">
                       {new Date(assignment.assigned_at).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
                         onClick={() => handleViewDetails(assignment.video_details)}
-                        className="text-blue-600 hover:text-blue-900 mr-3"
+                        className="text-palette-mauve hover:text-blue-900 mr-3"
                         title="View Video"
                       >
                         <FiEye className="inline" />
@@ -397,28 +397,28 @@ export default function TherapistVideosPage() {
       {/* Assign Modal */}
       {showAssignModal && selectedVideo && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+          <div className="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-palette-cream">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Assign Video</h3>
+              <h3 className="text-lg font-medium text-palette-dark">Assign Video</h3>
               <button
                 onClick={() => {
                   setShowAssignModal(false);
                   resetAssignmentForm();
                 }}
-                className="text-gray-400 hover:text-gray-500"
+                className="text-palette-dark/50 hover:text-palette-dark/60"
               >
                 ×
               </button>
             </div>
             
-            <div className="mb-4 p-3 bg-gray-50 rounded">
-              <p className="text-sm font-medium text-gray-900">{selectedVideo.title}</p>
+            <div className="mb-4 p-3 bg-palette-beige rounded">
+              <p className="text-sm font-medium text-palette-dark">{selectedVideo.title}</p>
             </div>
 
             <form onSubmit={handleAssignVideo}>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-palette-dark/80 mb-1">
                     Select Patient *
                   </label>
                   <select
@@ -426,7 +426,7 @@ export default function TherapistVideosPage() {
                     value={assignmentData.patient}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
                   >
                     <option value="">Choose a patient...</option>
                     {myPatients.map(patient => (
@@ -438,7 +438,7 @@ export default function TherapistVideosPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-palette-dark/80 mb-1">
                     Notes (Optional)
                   </label>
                   <textarea
@@ -447,7 +447,7 @@ export default function TherapistVideosPage() {
                     onChange={handleInputChange}
                     rows="3"
                     placeholder="Add any instructions or notes for the patient..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
                   />
                 </div>
               </div>
@@ -459,13 +459,13 @@ export default function TherapistVideosPage() {
                     setShowAssignModal(false);
                     resetAssignmentForm();
                   }}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                  className="px-4 py-2 text-sm font-medium text-palette-dark/80 bg-palette-cream border border-palette-mauve rounded-md hover:bg-palette-beige"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                  className="px-4 py-2 text-sm font-medium text-white bg-palette-mauve rounded-md hover:bg-palette-dark"
                 >
                   Assign Video
                 </button>
@@ -478,12 +478,12 @@ export default function TherapistVideosPage() {
       {/* Detail Modal */}
       {showDetailModal && selectedVideo && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-full max-w-3xl shadow-lg rounded-md bg-white">
+          <div className="relative top-20 mx-auto p-5 border w-full max-w-3xl shadow-lg rounded-md bg-palette-cream">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Video Preview</h3>
+              <h3 className="text-lg font-medium text-palette-dark">Video Preview</h3>
               <button
                 onClick={() => setShowDetailModal(false)}
-                className="text-gray-400 hover:text-gray-500"
+                className="text-palette-dark/50 hover:text-palette-dark/60"
               >
                 ×
               </button>
@@ -500,14 +500,14 @@ export default function TherapistVideosPage() {
               </div>
 
               <div>
-                <h4 className="font-semibold text-gray-900 text-lg">{selectedVideo.title}</h4>
-                <p className="text-sm text-gray-600 mt-2">{selectedVideo.description}</p>
+                <h4 className="font-semibold text-palette-dark text-lg">{selectedVideo.title}</h4>
+                <p className="text-sm text-palette-dark/70 mt-2">{selectedVideo.description}</p>
               </div>
 
-              <div className="flex justify-between items-center pt-4 border-t">
+              <div className="flex justify-between items-center pt-4 border-t border-palette-mauve/30">
                 <button
                   onClick={() => setShowDetailModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                  className="px-4 py-2 text-sm font-medium text-palette-dark/80 bg-palette-cream border border-palette-mauve rounded-md hover:bg-palette-beige"
                 >
                   Close
                 </button>
@@ -516,7 +516,7 @@ export default function TherapistVideosPage() {
                     setShowDetailModal(false);
                     handleAssignClick(selectedVideo);
                   }}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 flex items-center gap-2"
+                  className="px-4 py-2 text-sm font-medium text-white bg-palette-mauve rounded-md hover:bg-palette-dark flex items-center gap-2"
                 >
                   <FiUserPlus /> Assign to Patient
                 </button>

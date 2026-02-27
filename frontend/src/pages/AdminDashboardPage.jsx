@@ -74,7 +74,7 @@ export const AdminDashboardPage = () => {
       <div className="grid md:grid-cols-3 gap-6">
         <Card>
           <h3 className="text-lg font-bold text-palette-dark mb-2">Patients</h3>
-          <p className="text-3xl font-bold text-blue-600 mb-4">{stats.patients}</p>
+          <p className="text-3xl font-bold text-palette-mauve mb-4">{stats.patients}</p>
           <Button variant="ghost" className="text-sm w-full">
             View All Patients
           </Button>

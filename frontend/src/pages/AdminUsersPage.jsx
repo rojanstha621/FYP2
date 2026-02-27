@@ -245,7 +245,7 @@ export const AdminUsersPage = () => {
             </div>
 
             {selectedUser.role === 'THERAPIST' && (
-              <div className="mb-6 p-4 bg-gray-50 rounded">
+              <div className="mb-6 p-4 bg-palette-beige rounded">
                 <h3 className="text-sm font-semibold mb-3">Therapist Approval</h3>
                 <div className="flex gap-2">
                   {selectedUser.therapist_status !== 'APPROVED' && (
@@ -267,7 +267,7 @@ export const AdminUsersPage = () => {
                     </Button>
                   )}
                 </div>
-                <div className="mt-2 text-sm text-gray-600">
+                <div className="mt-2 text-sm text-palette-dark/70">
                   Current Status: <span className="font-semibold">{selectedUser.therapist_status || 'PENDING'}</span>
                 </div>
               </div>

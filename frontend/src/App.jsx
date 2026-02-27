@@ -2,7 +2,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Navigation } from './components/Navigation';
-import { Footer } from './components/Footer';
 import { Layout } from './components/Layout';
 
 // Auth Pages
@@ -18,12 +17,9 @@ import { MedicalHistoryPage } from './pages/MedicalHistoryPage';
 import ExercisesPage from './pages/ExercisesPage';
 import ApprovedTherapistsPage from './pages/ApprovedTherapistsPage';
 import TherapistDetailPage from './pages/TherapistDetailPage';
-import AdminPendingAssignmentsPage from './pages/AdminPendingAssignmentsPage';
 import AdminPendingTherapistsPage from './pages/AdminPendingTherapistsPage';
 import TherapistPendingRequestsPage from './pages/TherapistPendingRequestsPage';
-import { ProgressPage } from './pages/ProgressPage';
 import PatientDashboardPage from './pages/PatientDashboardPage';
-import PatientVideosPage from './pages/PatientVideosPage';
 
 // Therapist Pages
 import { PatientsPage } from './pages/PatientsPage';
@@ -33,8 +29,6 @@ import TherapistVideosPage from './pages/TherapistVideosPage';
 // Admin Pages
 import { AdminUsersPage } from './pages/AdminUsersPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
-import { AssignmentsPage as AdminAssignmentsPage } from './pages/AssignmentsPage';
-import { AdminMedicalHistoriesPage } from './pages/AdminMedicalHistoriesPage';
 import AdminVideosPage from './pages/AdminVideosPage';
 
 function App() {
@@ -60,14 +54,6 @@ function App() {
             element={
               <ProtectedRoute roles={["PATIENT"]}>
                 <TherapistDetailPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/pending-assignments"
-            element={
-              <ProtectedRoute roles={["ADMIN"]}>
-                <AdminPendingAssignmentsPage />
               </ProtectedRoute>
             }
           />
@@ -125,22 +111,6 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route
-                path="/progress"
-                element={
-                  <ProtectedRoute requiredRole="PATIENT">
-                    <ProgressPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/videos"
-                element={
-                  <ProtectedRoute requiredRole="PATIENT">
-                    <PatientVideosPage />
-                  </ProtectedRoute>
-                }
-              />
 
               {/* Therapist Routes */}
               <Route
@@ -168,24 +138,6 @@ function App() {
                 }
               />
 
-              {/* Admin Assignments */}
-              <Route
-                path="/admin/assignments"
-                element={
-                  <ProtectedRoute requiredRole="ADMIN">
-                    <AdminAssignmentsPage />
-                  </ProtectedRoute>
-                }
-              />
-              {/* Admin Medical Histories */}
-              <Route
-                path="/admin/medical-histories"
-                element={
-                  <ProtectedRoute requiredRole="ADMIN">
-                    <AdminMedicalHistoriesPage />
-                  </ProtectedRoute>
-                }
-              />
               {/* Admin Routes */}
               <Route
                 path="/admin/users"
@@ -216,7 +168,6 @@ function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>
-          <Footer />
         </Layout>
       </AuthProvider>
     </Router>

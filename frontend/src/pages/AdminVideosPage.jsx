@@ -140,10 +140,10 @@ export default function AdminVideosPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Video Management</h1>
+        <h1 className="text-3xl font-bold text-palette-dark">Video Management</h1>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+          className="bg-palette-mauve text-white px-4 py-2 rounded-lg hover:bg-palette-dark flex items-center gap-2"
         >
           <FiPlus /> Add Video
         </button>
@@ -158,10 +158,10 @@ export default function AdminVideosPage() {
       )}
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
+      <div className="bg-palette-cream p-4 rounded-lg shadow-sm mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-palette-dark/80 mb-2">
               Search
             </label>
             <input
@@ -169,18 +169,18 @@ export default function AdminVideosPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by title..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-palette-dark/80 mb-2">
               Status
             </label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
             >
               <option value="">All</option>
               <option value="true">Active</option>
@@ -196,37 +196,37 @@ export default function AdminVideosPage() {
           <Spinner />
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+        <div className="bg-palette-cream rounded-lg shadow-sm overflow-hidden">
+          <table className="min-w-full divide-y divide-palette-mauve/30">
+            <thead className="bg-palette-beige">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-palette-dark/60 uppercase tracking-wider">
                   Video
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-palette-dark/60 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-palette-dark/60 uppercase tracking-wider">
                   Assignments
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-palette-dark/60 uppercase tracking-wider">
                   Created
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-palette-dark/60 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-palette-cream divide-y divide-palette-mauve/30">
               {videos.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan="5" className="px-6 py-4 text-center text-palette-dark/60">
                     No videos found
                   </td>
                 </tr>
               ) : (
                 videos.map((video) => (
-                  <tr key={video.id} className="hover:bg-gray-50">
+                  <tr key={video.id} className="hover:bg-palette-beige">
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <img
@@ -235,10 +235,10 @@ export default function AdminVideosPage() {
                           className="h-12 w-20 object-cover rounded"
                         />
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-palette-dark">
                             {video.title}
                           </div>
-                          <div className="text-sm text-gray-500 line-clamp-1">
+                          <div className="text-sm text-palette-dark/60 line-clamp-1">
                             {video.description}
                           </div>
                         </div>
@@ -249,22 +249,22 @@ export default function AdminVideosPage() {
                         className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                           video.is_active
                             ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
+                            : 'bg-palette-cream/60 text-palette-dark'
                         }`}
                       >
                         {video.is_active ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-palette-dark/60">
                       {video.assignment_count || 0}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-palette-dark/60">
                       {new Date(video.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
                         onClick={() => handleViewDetails(video)}
-                        className="text-blue-600 hover:text-blue-900 mr-3"
+                        className="text-palette-mauve hover:text-palette-dark mr-3"
                         title="View Details"
                       >
                         <FiEye className="inline" />
@@ -272,8 +272,8 @@ export default function AdminVideosPage() {
                       <button
                         onClick={() => handleToggleActive(video)}
                         className={`${
-                          video.is_active ? 'text-gray-600' : 'text-green-600'
-                        } hover:text-gray-900 mr-3`}
+                          video.is_active ? 'text-palette-dark/70' : 'text-green-600'
+                        } hover:text-palette-dark mr-3`}
                         title={video.is_active ? 'Deactivate' : 'Activate'}
                       >
                         {video.is_active ? <FiToggleRight className="inline" /> : <FiToggleLeft className="inline" />}
@@ -304,9 +304,9 @@ export default function AdminVideosPage() {
       {/* Create/Edit Modal */}
       {(showCreateModal || showEditModal) && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+          <div className="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-palette-cream">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">
+              <h3 className="text-lg font-medium text-palette-dark">
                 {showCreateModal ? 'Add New Video' : 'Edit Video'}
               </h3>
               <button
@@ -315,7 +315,7 @@ export default function AdminVideosPage() {
                   setShowEditModal(false);
                   resetForm();
                 }}
-                className="text-gray-400 hover:text-gray-500"
+                className="text-palette-dark/50 hover:text-palette-dark/60"
               >
                 ×
               </button>
@@ -324,7 +324,7 @@ export default function AdminVideosPage() {
             <form onSubmit={showCreateModal ? handleCreateVideo : handleUpdateVideo}>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-palette-dark/80 mb-1">
                     Title *
                   </label>
                   <input
@@ -333,12 +333,12 @@ export default function AdminVideosPage() {
                     value={formData.title}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-palette-dark/80 mb-1">
                     Description
                   </label>
                   <textarea
@@ -346,12 +346,12 @@ export default function AdminVideosPage() {
                     value={formData.description}
                     onChange={handleInputChange}
                     rows="3"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-palette-dark/80 mb-1">
                     YouTube URL *
                   </label>
                   <input
@@ -361,9 +361,9 @@ export default function AdminVideosPage() {
                     onChange={handleInputChange}
                     required
                     placeholder="https://www.youtube.com/watch?v=..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
                   />
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-1 text-sm text-palette-dark/60">
                     Supported formats: youtube.com/watch?v=, youtu.be/, youtube.com/embed/
                   </p>
                 </div>
@@ -375,9 +375,9 @@ export default function AdminVideosPage() {
                     id="is_active"
                     checked={formData.is_active}
                     onChange={handleInputChange}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-palette-mauve focus:ring-palette-mauve border-palette-mauve rounded"
                   />
-                  <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900">
+                  <label htmlFor="is_active" className="ml-2 block text-sm text-palette-dark">
                     Active (visible to therapists)
                   </label>
                 </div>
@@ -391,13 +391,13 @@ export default function AdminVideosPage() {
                     setShowEditModal(false);
                     resetForm();
                   }}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                  className="px-4 py-2 text-sm font-medium text-palette-dark/80 bg-palette-cream border border-palette-mauve rounded-md hover:bg-palette-beige"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                  className="px-4 py-2 text-sm font-medium text-white bg-palette-mauve rounded-md hover:bg-palette-dark"
                 >
                   {showCreateModal ? 'Create' : 'Update'}
                 </button>
@@ -410,12 +410,12 @@ export default function AdminVideosPage() {
       {/* Detail Modal */}
       {showDetailModal && selectedVideo && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-full max-w-3xl shadow-lg rounded-md bg-white">
+          <div className="relative top-20 mx-auto p-5 border w-full max-w-3xl shadow-lg rounded-md bg-palette-cream">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Video Details</h3>
+              <h3 className="text-lg font-medium text-palette-dark">Video Details</h3>
               <button
                 onClick={() => setShowDetailModal(false)}
-                className="text-gray-400 hover:text-gray-500"
+                className="text-palette-dark/50 hover:text-palette-dark/60"
               >
                 ×
               </button>
@@ -432,42 +432,42 @@ export default function AdminVideosPage() {
               </div>
 
               <div>
-                <h4 className="font-semibold text-gray-900">{selectedVideo.title}</h4>
-                <p className="text-sm text-gray-600 mt-2">{selectedVideo.description}</p>
+                <h4 className="font-semibold text-palette-dark">{selectedVideo.title}</h4>
+                <p className="text-sm text-palette-dark/70 mt-2">{selectedVideo.description}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="font-medium text-gray-700">Status:</span>
-                  <span className={`ml-2 ${selectedVideo.is_active ? 'text-green-600' : 'text-gray-600'}`}>
+                  <span className="font-medium text-palette-dark/80">Status:</span>
+                  <span className={`ml-2 ${selectedVideo.is_active ? 'text-green-600' : 'text-palette-dark/70'}`}>
                     {selectedVideo.is_active ? 'Active' : 'Inactive'}
                   </span>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Assignments:</span>
-                  <span className="ml-2 text-gray-900">{selectedVideo.assignment_count || 0}</span>
+                  <span className="font-medium text-palette-dark/80">Assignments:</span>
+                  <span className="ml-2 text-palette-dark">{selectedVideo.assignment_count || 0}</span>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Created:</span>
-                  <span className="ml-2 text-gray-900">
+                  <span className="font-medium text-palette-dark/80">Created:</span>
+                  <span className="ml-2 text-palette-dark">
                     {new Date(selectedVideo.created_at).toLocaleDateString()}
                   </span>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Updated:</span>
-                  <span className="ml-2 text-gray-900">
+                  <span className="font-medium text-palette-dark/80">Updated:</span>
+                  <span className="ml-2 text-palette-dark">
                     {new Date(selectedVideo.updated_at).toLocaleDateString()}
                   </span>
                 </div>
               </div>
 
               <div>
-                <span className="font-medium text-gray-700">YouTube URL:</span>
+                <span className="font-medium text-palette-dark/80">YouTube URL:</span>
                 <a
                   href={selectedVideo.youtube_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="ml-2 text-blue-600 hover:underline text-sm"
+                  className="ml-2 text-palette-mauve hover:underline text-sm"
                 >
                   {selectedVideo.youtube_url}
                 </a>
@@ -477,7 +477,7 @@ export default function AdminVideosPage() {
             <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setShowDetailModal(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                className="px-4 py-2 text-sm font-medium text-palette-dark/80 bg-palette-cream border border-palette-mauve rounded-md hover:bg-palette-beige"
               >
                 Close
               </button>

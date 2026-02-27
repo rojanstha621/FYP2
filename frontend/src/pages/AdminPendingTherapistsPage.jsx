@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { adminAPI } from '../services/api';
-import { Layout } from '../components/Layout';
 import { Alert } from '../components/Alert';
 import { Spinner } from '../components/Spinner';
 
@@ -56,7 +55,6 @@ export default function AdminPendingTherapistsPage() {
   };
 
   return (
-    <Layout>
       <div className="max-w-7xl mx-auto px-4 py-6">
         <h1 className="text-3xl font-bold mb-6">Pending Therapist Approvals</h1>
 
@@ -66,7 +64,7 @@ export default function AdminPendingTherapistsPage() {
         {loading ? (
           <Spinner />
         ) : (
-          <div className="bg-white rounded-lg shadow divide-y">
+          <div className="bg-palette-cream rounded-lg shadow divide-y">
             {therapists.length ? (
               therapists.map((therapist) => (
                 <div key={therapist.id} className="p-4">
@@ -75,9 +73,9 @@ export default function AdminPendingTherapistsPage() {
                       <div className="font-semibold text-lg">
                         {therapist.first_name} {therapist.last_name}
                       </div>
-                      <div className="text-sm text-gray-600 mt-1">{therapist.email}</div>
+                      <div className="text-sm text-palette-dark/70 mt-1">{therapist.email}</div>
                       {therapist.phone_number && (
-                        <div className="text-sm text-gray-600">{therapist.phone_number}</div>
+                        <div className="text-sm text-palette-dark/70">{therapist.phone_number}</div>
                       )}
                       <div className="mt-2">
                         <span className="px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
@@ -105,11 +103,10 @@ export default function AdminPendingTherapistsPage() {
                 </div>
               ))
             ) : (
-              <p className="p-4 text-gray-600">No pending therapist approvals.</p>
+              <p className="p-4 text-palette-dark/70">No pending therapist approvals.</p>
             )}
           </div>
         )}
       </div>
-    </Layout>
   );
 }
