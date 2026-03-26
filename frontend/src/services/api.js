@@ -117,8 +117,8 @@ export const assignmentAPI = {
     apiClient.delete(`/api/medicals/assignments/${id}/`),
   requestAssignment: (therapistId) =>
     apiClient.post('/api/medicals/assignments/request/', { therapist_id: therapistId }),
-  getPending: () =>
-    apiClient.get('/api/medicals/assignments/pending/'),
+  getPending: (params) =>
+    apiClient.get('/api/medicals/assignments/pending/', { params }),
   activateAssignment: (id) =>
     apiClient.patch(`/api/medicals/assignments/${id}/activate/`),
   rejectAssignment: (id) =>
@@ -127,13 +127,13 @@ export const assignmentAPI = {
 
 // Admin API
 export const adminAPI = {
-  getUsers: () => apiClient.get('/api/account/users/'),
+  getUsers: (params) => apiClient.get('/api/account/users/', { params }),
   getUser: (id) => apiClient.get(`/api/account/users/${id}/`),
   updateUser: (id, data) =>
     apiClient.patch(`/api/account/users/${id}/`, data),
   deleteUser: (id) =>
     apiClient.delete(`/api/account/users/${id}/`),
-  getPendingTherapists: () => apiClient.get('/api/account/therapists/pending/'),
+  getPendingTherapists: (params) => apiClient.get('/api/account/therapists/pending/', { params }),
   approveTherapist: (id) => apiClient.patch(`/api/account/therapists/${id}/approve/`),
   rejectTherapist: (id) => apiClient.patch(`/api/account/therapists/${id}/reject/`),
 };
@@ -158,7 +158,7 @@ export const exerciseAPI = {
 
 // Therapist Directory API
 export const therapistAPI = {
-  getApproved: () => apiClient.get('/api/account/therapists/approved/'),
+  getApproved: (params) => apiClient.get('/api/account/therapists/approved/', { params }),
   getById: (id) => apiClient.get(`/api/account/therapists/${id}/`),
 };
 

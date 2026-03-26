@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { videoAPI } from '../services/api';
 import { Alert } from '../components/Alert';
 import { Spinner } from '../components/Spinner';
@@ -87,8 +87,8 @@ export default function PatientVideosPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">My Educational Videos</h1>
-        <p className="text-gray-600 mt-2">Videos assigned to you by your therapist</p>
+        <h1 className="text-3xl font-bold text-palette-dark">My Educational Videos</h1>
+        <p className="text-palette-dark/70 mt-2">Videos assigned to you by your therapist</p>
       </div>
 
       {/* Alerts */}
@@ -102,56 +102,56 @@ export default function PatientVideosPage() {
       {/* Statistics Cards */}
       {statistics && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-palette-cream rounded-lg shadow-sm p-6 border border-palette-mauve/20">
             <div className="flex items-center">
-              <div className="flex-shrink-0 bg-blue-500 rounded-md p-3">
+              <div className="flex-shrink-0 bg-palette-mauve rounded-md p-3">
                 <FiPlay className="h-6 w-6 text-white" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total Assigned</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-sm font-medium text-palette-dark/60">Total Assigned</p>
+                <p className="text-2xl font-semibold text-palette-dark">
                   {statistics.total_assigned}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-palette-cream rounded-lg shadow-sm p-6 border border-palette-mauve/20">
             <div className="flex items-center">
               <div className="flex-shrink-0 bg-green-500 rounded-md p-3">
                 <FiCheckCircle className="h-6 w-6 text-white" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Viewed</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-sm font-medium text-palette-dark/60">Viewed</p>
+                <p className="text-2xl font-semibold text-palette-dark">
                   {statistics.total_viewed}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-palette-cream rounded-lg shadow-sm p-6 border border-palette-mauve/20">
             <div className="flex items-center">
               <div className="flex-shrink-0 bg-yellow-500 rounded-md p-3">
                 <FiClock className="h-6 w-6 text-white" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Unviewed</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-sm font-medium text-palette-dark/60">Unviewed</p>
+                <p className="text-2xl font-semibold text-palette-dark">
                   {statistics.total_unviewed}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-palette-cream rounded-lg shadow-sm p-6 border border-palette-mauve/20">
             <div className="flex items-center">
-              <div className="flex-shrink-0 bg-purple-500 rounded-md p-3">
+              <div className="flex-shrink-0 bg-palette-dark rounded-md p-3">
                 <FiCheckCircle className="h-6 w-6 text-white" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Completion</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-sm font-medium text-palette-dark/60">Completion</p>
+                <p className="text-2xl font-semibold text-palette-dark">
                   {statistics.completion_rate}%
                 </p>
               </div>
@@ -161,10 +161,10 @@ export default function PatientVideosPage() {
       )}
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
+      <div className="bg-palette-cream p-4 rounded-lg shadow-sm mb-6 border border-palette-mauve/20">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-palette-dark/80 mb-2">
               Search
             </label>
             <input
@@ -172,18 +172,18 @@ export default function PatientVideosPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by title..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-palette-mauve/30 rounded-md bg-palette-beige/40 text-palette-dark focus:outline-none focus:ring-2 focus:ring-palette-mauve"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-palette-dark/80 mb-2">
               Status
             </label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-palette-mauve/30 rounded-md bg-palette-beige/40 text-palette-dark focus:outline-none focus:ring-2 focus:ring-palette-mauve"
             >
               <option value="">All Videos</option>
               <option value="unviewed">Not Viewed</option>
@@ -199,18 +199,18 @@ export default function PatientVideosPage() {
           <Spinner />
         </div>
       ) : videos.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-          <FiPlay className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-lg font-medium text-gray-900">No videos assigned yet</h3>
-          <p className="mt-1 text-sm text-gray-500">
+        <div className="bg-palette-cream rounded-lg shadow-sm p-12 text-center border border-palette-mauve/20">
+          <FiPlay className="mx-auto h-12 w-12 text-palette-dark/40" />
+          <h3 className="mt-2 text-lg font-medium text-palette-dark">No videos assigned yet</h3>
+          <p className="mt-1 text-sm text-palette-dark/60">
             Your therapist hasn't assigned any videos to you yet.
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {videos.map((assignment) => (
-            <div key={assignment.id} className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-              <div className="aspect-video bg-gray-200 relative group cursor-pointer" onClick={() => handleViewVideo(assignment)}>
+            <div key={assignment.id} className="bg-palette-cream rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow border border-palette-mauve/20">
+              <div className="aspect-video bg-palette-beige relative group cursor-pointer" onClick={() => handleViewVideo(assignment)}>
                 <img
                   src={assignment.video_details.thumbnail_url}
                   alt={assignment.video_details.title}
@@ -226,22 +226,22 @@ export default function PatientVideosPage() {
                 )}
               </div>
               <div className="p-4">
-                <h3 className="font-semibold text-gray-900 mb-2">
+                <h3 className="font-semibold text-palette-dark mb-2">
                   {assignment.video_details.title}
                 </h3>
-                <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+                <p className="text-sm text-palette-dark/70 line-clamp-2 mb-3">
                   {assignment.video_details.description}
                 </p>
                 
                 {assignment.notes && (
-                  <div className="mb-3 p-2 bg-blue-50 rounded text-sm">
-                    <p className="text-blue-900">
+                  <div className="mb-3 p-2 bg-palette-beige rounded text-sm border border-palette-mauve/20">
+                    <p className="text-palette-dark">
                       <strong>Therapist Note:</strong> {assignment.notes}
                     </p>
                   </div>
                 )}
 
-                <div className="flex justify-between items-center text-sm text-gray-500 mb-3">
+                <div className="flex justify-between items-center text-sm text-palette-dark/60 mb-3">
                   <div className="flex items-center gap-1">
                     <FiUser className="text-xs" />
                     <span>{assignment.therapist_name}</span>
@@ -251,7 +251,7 @@ export default function PatientVideosPage() {
 
                 <button
                   onClick={() => handleViewVideo(assignment)}
-                  className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center justify-center gap-2"
+                  className="w-full bg-palette-mauve text-white px-4 py-2 rounded hover:bg-palette-dark flex items-center justify-center gap-2"
                 >
                   <FiPlay /> Watch Video
                 </button>
@@ -263,15 +263,15 @@ export default function PatientVideosPage() {
 
       {/* Video Detail Modal */}
       {showDetailModal && selectedVideo && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white">
+        <div className="fixed inset-0 bg-palette-dark/50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border border-palette-mauve/20 w-full max-w-4xl shadow-lg rounded-md bg-palette-cream">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">
+              <h3 className="text-lg font-medium text-palette-dark">
                 {selectedVideo.video_details.title}
               </h3>
               <button
                 onClick={() => setShowDetailModal(false)}
-                className="text-gray-400 hover:text-gray-500 text-2xl"
+                className="text-palette-dark/50 hover:text-palette-dark text-2xl"
               >
                 ×
               </button>
@@ -288,20 +288,20 @@ export default function PatientVideosPage() {
                 />
               </div>
 
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="bg-palette-beige/60 p-4 rounded-lg border border-palette-mauve/20">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <p className="text-sm text-gray-600">Assigned by</p>
-                    <p className="font-medium text-gray-900">{selectedVideo.therapist_name}</p>
+                    <p className="text-sm text-palette-dark/60">Assigned by</p>
+                    <p className="font-medium text-palette-dark">{selectedVideo.therapist_name}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Assigned on</p>
-                    <p className="font-medium text-gray-900">
+                    <p className="text-sm text-palette-dark/60">Assigned on</p>
+                    <p className="font-medium text-palette-dark">
                       {new Date(selectedVideo.assigned_at).toLocaleDateString()}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Status</p>
+                    <p className="text-sm text-palette-dark/60">Status</p>
                     <span
                       className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                         selectedVideo.viewed
@@ -315,22 +315,22 @@ export default function PatientVideosPage() {
                 </div>
 
                 {selectedVideo.notes && (
-                  <div className="mt-3 p-3 bg-blue-50 border-l-4 border-blue-500">
-                    <p className="text-sm font-medium text-blue-900 mb-1">Therapist Instructions:</p>
-                    <p className="text-sm text-blue-800">{selectedVideo.notes}</p>
+                  <div className="mt-3 p-3 bg-palette-cream border-l-4 border-palette-mauve">
+                    <p className="text-sm font-medium text-palette-dark mb-1">Therapist Instructions:</p>
+                    <p className="text-sm text-palette-dark/80">{selectedVideo.notes}</p>
                   </div>
                 )}
               </div>
 
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">About this video</h4>
-                <p className="text-sm text-gray-600">
+                <h4 className="font-semibold text-palette-dark mb-2">About this video</h4>
+                <p className="text-sm text-palette-dark/70">
                   {selectedVideo.video_details.description}
                 </p>
               </div>
 
               {selectedVideo.viewed && selectedVideo.viewed_at && (
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-palette-dark/60">
                   First viewed on {new Date(selectedVideo.viewed_at).toLocaleString()}
                 </div>
               )}
@@ -339,7 +339,7 @@ export default function PatientVideosPage() {
             <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setShowDetailModal(false)}
-                className="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                className="px-6 py-2 text-sm font-medium text-palette-dark bg-palette-beige border border-palette-mauve/30 rounded-md hover:bg-palette-mauve/20"
               >
                 Close
               </button>

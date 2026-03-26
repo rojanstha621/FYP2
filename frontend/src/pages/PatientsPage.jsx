@@ -3,13 +3,13 @@ import { assignmentAPI, medicalAPI } from '../services/api';
 import { Card, Button, Select, Textarea } from '../components/FormElements';
 import { Alert } from '../components/Alert';
 import { Spinner } from '../components/Spinner';
+import { Link } from 'react-router-dom';
 
 export const PatientsPage = () => {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedPatient, setSelectedPatient] = useState(null);
-  const [showAssignForm, setShowAssignForm] = useState(false);
   const [medicalHistory, setMedicalHistory] = useState(null);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
@@ -60,9 +60,9 @@ export const PatientsPage = () => {
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-4xl font-bold text-palette-dark">My Patients</h1>
-        <Button variant="primary" onClick={() => setShowAssignForm(true)}>
-          Assign New Patient
-        </Button>
+        <Link to="/therapist/pending-requests" className="btn-primary">
+          View Pending Requests
+        </Link>
       </div>
 
       {error && <Alert type="error" message={error} onClose={() => setError('')} />}
@@ -121,9 +121,9 @@ export const PatientsPage = () => {
       {patients.length === 0 && (
         <Card className="text-center py-12">
           <p className="text-palette-dark/70 mb-4">No patients assigned yet</p>
-          <Button variant="primary" onClick={() => setShowAssignForm(true)}>
-            Assign Your First Patient
-          </Button>
+          <Link to="/therapist/pending-requests" className="btn-primary inline-block">
+            Check Pending Requests
+          </Link>
         </Card>
       )}
 

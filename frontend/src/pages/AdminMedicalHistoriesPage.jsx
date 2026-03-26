@@ -15,10 +15,18 @@ export default function AdminMedicalHistoriesPage() {
     fetchHistories();
   }, []);
 
+  const extractList = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.results)) return payload.results;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload?.data?.results)) return payload.data.results;
+    return [];
+  };
+
   const fetchHistories = async () => {
     try {
       const response = await medicalAPI.getMedicalHistories();
-      const historyData = response.data.result || response.data || [];
+      const historyData = extractList(response.data);
       setHistories(historyData);
       setError('');
     } catch (err) {

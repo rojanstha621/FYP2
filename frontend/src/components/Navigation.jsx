@@ -1,10 +1,24 @@
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import logo from '../assets/logo.png';
 
 export const Navigation = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const userMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -34,6 +48,10 @@ export const Navigation = () => {
 
   const userRole = user.role;
   const firstName = user.first_name || 'User';
+  const lastName = user.last_name || '';
+  const userEmail = user.email || '';
+  const profileImage = user.profile_picture || user.profile?.profile_picture || '';
+  const initials = `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase() || 'U';
 
   const getRoleBadge = (role) => {
     const colors = {
@@ -53,102 +71,53 @@ export const Navigation = () => {
           </Link>
 
           <div className="flex items-center gap-6">
-            <div className="hidden md:flex items-center gap-4">
-              {userRole === 'PATIENT' && (
-                <>
-                   <Link to="/dashboard" className="text-palette-dark hover:text-palette-mauve transition-all">
-                     Dashboard
-                   </Link>
-                   <Link to="/therapists" className="text-palette-dark hover:text-palette-mauve transition-all">
-                     Therapists
-                   </Link>
-                  <Link to="/exercises" className="text-palette-dark hover:text-palette-mauve transition-all">
-                    Exercises
-                  </Link>
-                  <Link to="/patient/sessions" className="text-palette-dark hover:text-palette-mauve transition-all">
-                    Sessions
-                  </Link>
-                  <Link to="/patient/plans" className="text-palette-dark hover:text-palette-mauve transition-all">
-                    My Plans
-                  </Link>
-                  <Link to="/patient/videos" className="text-palette-dark hover:text-palette-mauve transition-all">
-                    My Videos
-                  </Link>
-                  <Link to="/patient/progress" className="text-palette-dark hover:text-palette-mauve transition-all">
-                    Progress
-                  </Link>
-                  <Link to="/patient/feedback" className="text-palette-dark hover:text-palette-mauve transition-all">
-                    Feedback
-                  </Link>
-                  <Link to="/medical-history" className="text-palette-dark hover:text-palette-mauve transition-all">
-                    Medical History
-                  </Link>
-                </>
-              )}
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getRoleBadge(userRole)}`}>
+              {userRole}
+            </span>
 
-              {userRole === 'THERAPIST' && (
-                <>
-                  <Link to="/patients" className="text-palette-dark hover:text-palette-mauve transition-all">
-                    My Patients
-                  </Link>
-                  <Link to="/therapist/pending-requests" className="text-palette-dark hover:text-palette-mauve transition-all">
-                    Pending Requests
-                  </Link>
-                  <Link to="/assignments" className="text-palette-dark hover:text-palette-mauve transition-all">
-                    Assignments
-                  </Link>
-                  <Link to="/therapist/exercise-plans" className="text-palette-dark hover:text-palette-mauve transition-all">
-                    Exercise Plans
-                  </Link>
-                  <Link to="/therapist/videos" className="text-palette-dark hover:text-palette-mauve transition-all">
-                    Videos
-                  </Link>
-                  <Link to="/therapist/overview" className="text-palette-dark hover:text-palette-mauve transition-all">
-                    Overview
-                  </Link>
-                  <Link to="/therapist/feedback" className="text-palette-dark hover:text-palette-mauve transition-all">
-                    Feedback
-                  </Link>
-                </>
-              )}
-
-              {userRole === 'ADMIN' && (
-                <>
-                  <Link to="/admin/users" className="text-palette-dark hover:text-palette-mauve transition-all">
-                    Users
-                  </Link>
-                  <Link to="/admin/dashboard" className="text-palette-dark hover:text-palette-mauve transition-all">
-                    Dashboard
-                  </Link>
-                  <Link to="/admin/pending-therapists" className="text-palette-dark hover:text-palette-mauve transition-all">
-                    Pending Therapists
-                  </Link>
-                  <Link to="/admin/medical-histories" className="text-palette-dark hover:text-palette-mauve transition-all">
-                    Medical Histories
-                  </Link>
-                  <Link to="/admin/pending-assignments" className="text-palette-dark hover:text-palette-mauve transition-all">
-                    Pending Assignments
-                  </Link>
-                  <Link to="/admin/videos" className="text-palette-dark hover:text-palette-mauve transition-all">
-                    Videos
-                  </Link>
-                </>
-              )}
-            </div>
-
-            <div className="flex items-center gap-4">
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getRoleBadge(userRole)}`}>
-                {userRole}
-              </span>
-              <Link to="/profile" className="text-palette-dark hover:text-palette-mauve transition-all">
-                {firstName}
-              </Link>
+            <div className="relative" ref={userMenuRef}>
               <button
-                onClick={handleLogout}
-                className="btn-primary"
+                type="button"
+                onClick={() => setShowUserMenu((prev) => !prev)}
+                className="h-10 w-10 overflow-hidden rounded-full border-2 border-palette-mauve/40 bg-palette-beige hover:border-palette-mauve"
+                aria-label="Open user menu"
               >
-                Logout
+                {profileImage ? (
+                  <img src={profileImage} alt="Profile" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center text-xs font-semibold text-palette-dark">
+                    {initials}
+                  </span>
+                )}
               </button>
+
+              {showUserMenu && (
+                <div className="absolute right-0 top-12 z-30 w-52 rounded-lg border border-palette-mauve/30 bg-palette-cream shadow-lg">
+                  <div className="border-b border-palette-mauve/20 px-4 py-3">
+                    <p className="text-sm font-semibold text-palette-dark">{firstName} {lastName}</p>
+                    <p className="text-xs text-palette-dark/60 truncate">{userEmail}</p>
+                  </div>
+
+                  <Link
+                    to="/profile"
+                    onClick={() => setShowUserMenu(false)}
+                    className="block px-4 py-2 text-sm text-palette-dark hover:bg-palette-beige"
+                  >
+                    Profile
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setShowUserMenu(false);
+                      await handleLogout();
+                    }}
+                    className="block w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

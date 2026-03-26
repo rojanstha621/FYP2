@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Spinner } from '../../components/Spinner';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import {
   createExercisePlan,
   deleteExercisePlan,
@@ -49,15 +49,18 @@ export default function ExercisePlansPage() {
   const [formData, setFormData] = useState(defaultForm);
 
   const patientOptions = useMemo(() => {
-    const myAssignments = assignments.filter(
-      (assignment) => Number(assignment.therapist) === Number(user?.id) && assignment.is_active
-    );
+    const currentTherapistId = String(user?.id || '');
+    const myAssignments = assignments.filter((assignment) => {
+      const therapistId = String(assignment?.therapist || assignment?.therapist_details?.id || '');
+      return assignment?.is_active && therapistId === currentTherapistId;
+    });
 
     const unique = new Map();
     myAssignments.forEach((assignment) => {
-      if (!unique.has(assignment.patient)) {
-        unique.set(assignment.patient, {
-          id: assignment.patient,
+      const patientId = String(assignment?.patient || assignment?.patient_details?.id || '');
+      if (patientId && !unique.has(patientId)) {
+        unique.set(patientId, {
+          id: patientId,
           label: formatName(assignment),
         });
       }
@@ -105,7 +108,7 @@ export default function ExercisePlansPage() {
       setSuccess('');
 
       await createExercisePlan({
-        patient: Number(formData.patient),
+        patient: formData.patient,
         exercise: Number(formData.exercise),
         duration: Number(formData.duration),
         rest_duration: Number(formData.rest_duration),

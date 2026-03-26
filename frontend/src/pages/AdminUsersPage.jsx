@@ -17,16 +17,23 @@ export const AdminUsersPage = () => {
     fetchUsers();
   }, []);
 
+  const extractList = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.results)) return payload.results;
+    if (Array.isArray(payload?.users)) return payload.users;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload?.data?.results)) return payload.data.results;
+    return [];
+  };
+
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await adminAPI.getUsers();
+      const response = await adminAPI.getUsers({ page_size: 1000 });
       console.log('API Response:', response.data);
-      
-      // Handle different response structures
-      const userData = response.data.result || response.data;
-      const userList = Array.isArray(userData) ? userData : (userData.users || []);
-      
+
+      const userList = extractList(response.data);
+
       setUsers(userList);
       setError('');
     } catch (err) {

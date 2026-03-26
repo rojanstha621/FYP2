@@ -1,7 +1,25 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { authAPI } from '../services/api';
+import { AuthContext } from './authContextInstance.js';
 
-const AuthContext = createContext(null);
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+const resolveMediaUrl = (value) => {
+  if (!value) return '';
+  if (typeof value !== 'string') return '';
+  if (value.startsWith('http://') || value.startsWith('https://')) return value;
+  return `${API_BASE_URL}${value.startsWith('/') ? '' : '/'}${value}`;
+};
+
+const buildUserWithProfile = (payload) => {
+  const user = payload?.user || null;
+  if (!user) return null;
+
+  return {
+    ...user,
+    profile_picture: resolveMediaUrl(payload?.profile?.profile_picture),
+  };
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -21,8 +39,9 @@ export const AuthProvider = ({ children }) => {
   const fetchCurrentUser = async () => {
     try {
       const response = await authAPI.getMe();
-      // Store the flattened user object for simpler role checks
-      setUser(response.data.result.user);
+      const payload = response.data?.result || response.data;
+      // Store flattened user + profile picture for avatar rendering.
+      setUser(buildUserWithProfile(payload));
       setError(null);
     } catch (err) {
       console.error('Failed to fetch user:', err);
@@ -39,7 +58,12 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       const response = await authAPI.login(email, password);
-      const { access, refresh } = response.data.result;
+      const payload = response.data?.result || response.data;
+      const { access, refresh } = payload || {};
+
+      if (!access || !refresh) {
+        throw new Error('Missing auth tokens in login response');
+      }
 
       localStorage.setItem('access_token', access);
       localStorage.setItem('refresh_token', refresh);
@@ -47,7 +71,7 @@ export const AuthProvider = ({ children }) => {
       await fetchCurrentUser();
       return true;
     } catch (err) {
-      const message = err.response?.data?.detail || 'Login failed';
+      const message = err.response?.data?.detail || err.response?.data?.message || 'Login failed';
       setError(message);
       return false;
     } finally {
@@ -88,10 +112,11 @@ export const AuthProvider = ({ children }) => {
   const updateProfile = async (data) => {
     try {
       const response = await authAPI.updateProfile(data);
-      setUser(response.data.result.user);
+      const payload = response.data?.result || response.data;
+      setUser(buildUserWithProfile(payload));
       return true;
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to update profile');
+      setError(err.response?.data?.detail || err.response?.data?.message || 'Failed to update profile');
       return false;
     }
   };
@@ -108,12 +133,4 @@ export const AuthProvider = ({ children }) => {
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 };

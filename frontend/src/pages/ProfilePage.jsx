@@ -1,9 +1,17 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { authAPI } from '../services/api';
 import { Card, Button, Input, Textarea } from '../components/FormElements';
 import { Alert } from '../components/Alert';
 import { Spinner } from '../components/Spinner';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+const resolveMediaUrl = (value) => {
+  if (!value || typeof value !== 'string') return '';
+  if (value.startsWith('http://') || value.startsWith('https://')) return value;
+  return `${API_BASE_URL}${value.startsWith('/') ? '' : '/'}${value}`;
+};
 
 export const ProfilePage = () => {
   const { user, updateProfile } = useAuth();
@@ -28,6 +36,7 @@ export const ProfilePage = () => {
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const profilePictureUrl = resolveMediaUrl(profile?.profile?.profile_picture);
 
   useEffect(() => {
     fetchProfile();
@@ -36,16 +45,17 @@ export const ProfilePage = () => {
   const fetchProfile = async () => {
     try {
       const response = await authAPI.getMe();
-      setProfile(response.data.result);
+      const payload = response.data?.result || response.data;
+      setProfile(payload);
       setFormData({
-        first_name: response.data.result.user.first_name,
-        last_name: response.data.result.user.last_name,
-        phone_number: response.data.result.user.phone_number || '',
-        address: response.data.result.profile.address || '',
-        bio: response.data.result.profile.bio || '',
+        first_name: payload?.user?.first_name || '',
+        last_name: payload?.user?.last_name || '',
+        phone_number: payload?.user?.phone_number || '',
+        address: payload?.profile?.address || '',
+        bio: payload?.profile?.bio || '',
       });
     } catch (err) {
-      setError('Failed to load profile');
+      setError(err.response?.data?.message || 'Failed to load profile');
     } finally {
       setLoading(false);
     }
@@ -136,10 +146,10 @@ export const ProfilePage = () => {
       <Card>
         <div className="flex flex-col md:flex-row gap-8 mb-8">
           <div className="flex flex-col items-center">
-            <div className="w-32 h-32 bg-palette-cream rounded-full flex items-center justify-center text-4xl mb-4 overflow-hidden">
-              {profile.profile.profile_picture ? (
+            <div className="w-32 h-32 bg-palette-cream rounded-full flex items-center justify-center text-4xl mb-3 overflow-hidden border-2 border-palette-mauve/30">
+              {profilePictureUrl ? (
                 <img
-                  src={profile.profile.profile_picture}
+                  src={profilePictureUrl}
                   alt="Profile"
                   className="w-full h-full object-cover"
                 />
@@ -147,7 +157,7 @@ export const ProfilePage = () => {
                 <span className="text-palette-mauve">{profile.user.first_name.charAt(0)}{profile.user.last_name.charAt(0)}</span>
               )}
             </div>
-            <label className="btn-primary">
+            <label className="btn-primary cursor-pointer">
               <input
                 type="file"
                 accept="image/*"
@@ -155,8 +165,11 @@ export const ProfilePage = () => {
                 disabled={uploadingImage}
                 className="hidden"
               />
+              Change Photo
             </label>
-            {uploadingImage && <p className="text-sm text-palette-dark/60 mt-2">Uploading...</p>}
+            {uploadingImage && (
+              <p className="text-sm text-palette-dark/60 mt-2">Uploading...</p>
+            )}
           </div>
 
           <div className="flex-1">
@@ -168,7 +181,7 @@ export const ProfilePage = () => {
               <p className="text-sm text-palette-dark/60">
                 Joined {new Date(profile.user.created_at).toLocaleDateString()}
               </p>
-              <span className="inline-block px-3 py-1 bg-palette-cream text-palette-mauve rounded-full text-sm font-medium">
+              <span className="inline-block px-3 py-1 bg-palette-cream text-palette-mauve rounded-full text-sm font-medium border border-palette-mauve/30">
                 {profile.user.role}
               </span>
             </div>

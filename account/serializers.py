@@ -163,9 +163,23 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class TherapistSummarySerializer(serializers.ModelSerializer):
+    profile_picture = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ["id", "first_name", "last_name", "email", "phone_number"]
+        fields = ["id", "first_name", "last_name", "email", "phone_number", "profile_picture"]
+
+    def get_profile_picture(self, obj):
+        profile = getattr(obj, "profile", None)
+        if not profile:
+            profile = UserProfile.objects.filter(user=obj).first()
+
+        if not profile or not profile.profile_picture:
+            return None
+
+        url = profile.profile_picture.url
+        request = self.context.get("request")
+        return request.build_absolute_uri(url) if request else url
 
 class TherapistPublicDetailSerializer(serializers.ModelSerializer):
     profile = serializers.SerializerMethodField()

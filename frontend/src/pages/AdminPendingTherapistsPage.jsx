@@ -14,10 +14,18 @@ export default function AdminPendingTherapistsPage() {
     fetchPending();
   }, []);
 
+  const extractList = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.results)) return payload.results;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload?.data?.results)) return payload.data.results;
+    return [];
+  };
+
   const fetchPending = async () => {
     try {
-      const res = await adminAPI.getPendingTherapists();
-      setTherapists(res.data.result || res.data || []);
+      const res = await adminAPI.getPendingTherapists({ page_size: 1000 });
+      setTherapists(extractList(res.data));
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load pending therapists');

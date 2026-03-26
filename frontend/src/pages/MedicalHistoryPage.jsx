@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { medicalAPI } from '../services/api';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { Card, Button, Textarea } from '../components/FormElements';
 import { Alert } from '../components/Alert';
 import { Spinner } from '../components/Spinner';

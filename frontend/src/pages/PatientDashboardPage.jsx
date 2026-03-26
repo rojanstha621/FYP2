@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { authAPI } from '../services/api';
 import { Alert } from '../components/Alert';
 import { Spinner } from '../components/Spinner';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { Link } from 'react-router-dom';
 
 export default function PatientDashboardPage() {

@@ -184,6 +184,7 @@ class AdminUserListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated, IsAdminRole]
     queryset = User.objects.all().order_by("-created_at")
     serializer_class = AdminUserListSerializer
+    pagination_class = None
 
 
 class AdminUserDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -266,6 +267,7 @@ class ApprovedTherapistsListView(generics.ListAPIView):
     """List all approved therapists; restricted to patients"""
     permission_classes = [IsAuthenticated, IsPatient]
     serializer_class = TherapistSummarySerializer
+    pagination_class = None
 
     def get_queryset(self):
         from .models import User

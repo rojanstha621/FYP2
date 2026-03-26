@@ -89,12 +89,17 @@ export default function SendFeedbackPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="mb-6 text-3xl font-bold text-palette-dark">Send Feedback</h1>
+      <div className="mb-6 rounded-xl border border-palette-mauve/20 bg-palette-cream/70 px-5 py-4">
+        <h1 className="text-3xl font-bold text-palette-dark">Send Feedback</h1>
+        <p className="mt-1 text-sm text-palette-dark/70">
+          Share guidance with your patients and track previously sent feedback.
+        </p>
+      </div>
 
       {error && <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-red-700">{error}</div>}
       {success && <div className="mb-4 rounded-md border border-green-200 bg-green-50 p-3 text-green-700">{success}</div>}
 
-      <form onSubmit={handleSubmit} className="mb-8 rounded-lg bg-palette-cream p-5 shadow-sm">
+      <form onSubmit={handleSubmit} className="mb-8 rounded-lg border border-palette-mauve/20 bg-palette-cream p-5 shadow-sm">
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <label className="mb-1 block text-sm font-medium text-palette-dark">Patient</label>
@@ -105,7 +110,7 @@ export default function SendFeedbackPage() {
                 setSessionId('');
               }}
               required
-              className="w-full rounded-md border border-palette-mauve/30 px-3 py-2"
+              className="w-full rounded-md border border-palette-mauve/30 bg-palette-beige/30 px-3 py-2 text-palette-dark focus:outline-none focus:ring-2 focus:ring-palette-mauve"
             >
               <option value="">Select patient</option>
               {patients.map((patient) => (
@@ -121,7 +126,7 @@ export default function SendFeedbackPage() {
             <select
               value={sessionId}
               onChange={(e) => setSessionId(e.target.value)}
-              className="w-full rounded-md border border-palette-mauve/30 px-3 py-2"
+              className="w-full rounded-md border border-palette-mauve/30 bg-palette-beige/30 px-3 py-2 text-palette-dark focus:outline-none focus:ring-2 focus:ring-palette-mauve"
             >
               <option value="">No linked session</option>
               {filteredSessions.map((session) => (
@@ -140,7 +145,7 @@ export default function SendFeedbackPage() {
             onChange={(e) => setMessage(e.target.value)}
             required
             rows={4}
-            className="w-full rounded-md border border-palette-mauve/30 px-3 py-2"
+            className="w-full rounded-md border border-palette-mauve/30 bg-palette-beige/30 px-3 py-2 text-palette-dark focus:outline-none focus:ring-2 focus:ring-palette-mauve"
             placeholder="Write feedback for your patient"
           />
         </div>
@@ -154,7 +159,7 @@ export default function SendFeedbackPage() {
         </button>
       </form>
 
-      <div className="rounded-lg bg-palette-cream p-5 shadow-sm">
+      <div className="rounded-lg border border-palette-mauve/20 bg-palette-cream p-5 shadow-sm">
         <h2 className="mb-4 text-xl font-semibold text-palette-dark">Sent Feedback by Patient</h2>
 
         {Object.keys(groupedFeedback).length === 0 ? (
@@ -164,13 +169,13 @@ export default function SendFeedbackPage() {
             {Object.entries(groupedFeedback).map(([pId, items]) => {
               const patient = patients.find((p) => String(p.patient_id) === String(pId));
               return (
-                <div key={pId} className="rounded-md bg-white p-4">
+                <div key={pId} className="rounded-md bg-palette-beige/60 border border-palette-mauve/20 p-4">
                   <h3 className="mb-2 font-semibold text-palette-dark">
                     {patient?.patient_name || `Patient #${pId}`}
                   </h3>
                   <div className="space-y-2">
                     {items.map((item) => (
-                      <div key={item.id} className="rounded border border-palette-mauve/20 p-3 text-sm">
+                      <div key={item.id} className="rounded border border-palette-mauve/20 bg-palette-cream/75 p-3 text-sm">
                         <p className="text-palette-dark/80">{item.message}</p>
                         <p className="mt-1 text-xs text-palette-dark/60">
                           {item.created_at ? new Date(item.created_at).toLocaleString() : ''}

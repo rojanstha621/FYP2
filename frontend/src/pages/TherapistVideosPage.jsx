@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { videoAPI, assignmentAPI } from '../services/api';
 import { Alert } from '../components/Alert';
 import { Spinner } from '../components/Spinner';

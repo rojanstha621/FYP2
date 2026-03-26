@@ -19,10 +19,19 @@ export default function TherapistPendingRequestsPage() {
     fetchRequests();
   }, []);
 
+  const extractList = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.results)) return payload.results;
+    if (Array.isArray(payload?.result)) return payload.result;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload?.data?.results)) return payload.data.results;
+    return [];
+  };
+
   const fetchRequests = async () => {
     try {
-      const res = await assignmentAPI.getPending();
-      setRequests(res.data.result || res.data || []);
+      const res = await assignmentAPI.getPending({ page_size: 1000 });
+      setRequests(extractList(res.data));
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load requests');
@@ -34,9 +43,7 @@ export default function TherapistPendingRequestsPage() {
   const viewMedicalHistory = async (patientId, patientName) => {
     try {
       const response = await medicalAPI.getMedicalHistories();
-      const data = Array.isArray(response.data) 
-        ? response.data 
-        : (response.data?.results || response.data?.result || response.data?.data || []);
+      const data = extractList(response.data);
       
       const patientHistory = data.filter(h => h.patient?.id === patientId || h.patient === patientId);
       setMedicalHistory(patientHistory);

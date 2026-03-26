@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Spinner } from '../../components/Spinner';
 import { getExercisePlans } from '../../api/exercisePlansApi';
+import { createSession } from '../../api/sessionsApi';
 
 const formatFrequency = (value) => {
   if (!value) return 'N/A';
@@ -12,12 +13,15 @@ export default function MyPlansPage() {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [startingPlanId, setStartingPlanId] = useState(null);
 
   useEffect(() => {
     const loadPlans = async () => {
       try {
         setLoading(true);
         setError('');
+        setSuccess('');
         const data = await getExercisePlans();
         setPlans(data);
       } catch (err) {
@@ -31,6 +35,20 @@ export default function MyPlansPage() {
   }, []);
 
   if (loading) return <Spinner />;
+
+  const handleStartSession = async (planId) => {
+    try {
+      setStartingPlanId(planId);
+      setError('');
+      setSuccess('');
+      await createSession({ exercise_plan: planId });
+      setSuccess('Session started. Open View Sessions to continue.');
+    } catch (err) {
+      setError(err.response?.data?.message || err.response?.data?.detail || 'Failed to start session');
+    } finally {
+      setStartingPlanId(null);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -46,6 +64,9 @@ export default function MyPlansPage() {
 
       {error && (
         <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-red-700">{error}</div>
+      )}
+      {success && (
+        <div className="mb-4 rounded-md border border-green-200 bg-green-50 p-3 text-green-700">{success}</div>
       )}
 
       {plans.length === 0 ? (
@@ -82,6 +103,17 @@ export default function MyPlansPage() {
                   {plan.scheduled_date ? new Date(plan.scheduled_date).toLocaleDateString() : 'N/A'}
                 </p>
                 {plan.special_instructions && <p>Notes: {plan.special_instructions}</p>}
+              </div>
+
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={() => handleStartSession(plan.id)}
+                  disabled={startingPlanId === plan.id}
+                  className="rounded-md bg-palette-mauve px-4 py-2 text-sm font-medium text-white hover:bg-palette-dark disabled:opacity-60"
+                >
+                  {startingPlanId === plan.id ? 'Starting...' : 'Start Session'}
+                </button>
               </div>
             </div>
           ))}
