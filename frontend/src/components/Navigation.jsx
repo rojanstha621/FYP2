@@ -65,6 +65,21 @@ export const Navigation = () => {
                   <Link to="/exercises" className="text-palette-dark hover:text-palette-mauve transition-all">
                     Exercises
                   </Link>
+                  <Link to="/patient/sessions" className="text-palette-dark hover:text-palette-mauve transition-all">
+                    Sessions
+                  </Link>
+                  <Link to="/patient/plans" className="text-palette-dark hover:text-palette-mauve transition-all">
+                    My Plans
+                  </Link>
+                  <Link to="/patient/videos" className="text-palette-dark hover:text-palette-mauve transition-all">
+                    My Videos
+                  </Link>
+                  <Link to="/patient/progress" className="text-palette-dark hover:text-palette-mauve transition-all">
+                    Progress
+                  </Link>
+                  <Link to="/patient/feedback" className="text-palette-dark hover:text-palette-mauve transition-all">
+                    Feedback
+                  </Link>
                   <Link to="/medical-history" className="text-palette-dark hover:text-palette-mauve transition-all">
                     Medical History
                   </Link>
@@ -82,8 +97,17 @@ export const Navigation = () => {
                   <Link to="/assignments" className="text-palette-dark hover:text-palette-mauve transition-all">
                     Assignments
                   </Link>
+                  <Link to="/therapist/exercise-plans" className="text-palette-dark hover:text-palette-mauve transition-all">
+                    Exercise Plans
+                  </Link>
                   <Link to="/therapist/videos" className="text-palette-dark hover:text-palette-mauve transition-all">
                     Videos
+                  </Link>
+                  <Link to="/therapist/overview" className="text-palette-dark hover:text-palette-mauve transition-all">
+                    Overview
+                  </Link>
+                  <Link to="/therapist/feedback" className="text-palette-dark hover:text-palette-mauve transition-all">
+                    Feedback
                   </Link>
                 </>
               )}
@@ -98,6 +122,12 @@ export const Navigation = () => {
                   </Link>
                   <Link to="/admin/pending-therapists" className="text-palette-dark hover:text-palette-mauve transition-all">
                     Pending Therapists
+                  </Link>
+                  <Link to="/admin/medical-histories" className="text-palette-dark hover:text-palette-mauve transition-all">
+                    Medical Histories
+                  </Link>
+                  <Link to="/admin/pending-assignments" className="text-palette-dark hover:text-palette-mauve transition-all">
+                    Pending Assignments
                   </Link>
                   <Link to="/admin/videos" className="text-palette-dark hover:text-palette-mauve transition-all">
                     Videos

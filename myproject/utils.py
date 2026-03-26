@@ -2,6 +2,34 @@ from rest_framework.response import Response
 from rest_framework import status as http_status
 
 
+def api_response(data=None, message="", status_code=http_status.HTTP_200_OK):
+    return Response(
+        {
+            "success": True,
+            "message": message,
+            "data": data,
+        },
+        status=status_code,
+    )
+
+
+def api_error(
+    message="",
+    code="error",
+    details=None,
+    status_code=http_status.HTTP_400_BAD_REQUEST,
+):
+    return Response(
+        {
+            "success": False,
+            "message": message,
+            "code": code,
+            "details": details or {},
+        },
+        status=status_code,
+    )
+
+
 class APIResponse:
     """
     Simple custom API response utility.
@@ -30,9 +58,7 @@ class APIResponse:
         Returns:
             Response: DRF Response object
         """
-        response_data = {
-            "success": is_success,
-            "message": message,
-            "result": result if result is not None else {},
-        }
-        return Response(response_data, status=status_code)
+        if is_success:
+            return api_response(data=result, message=message, status_code=status_code)
+
+        return api_error(message=message, status_code=status_code)

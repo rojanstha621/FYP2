@@ -101,6 +101,12 @@ class ExercisePlan(models.Model):
     Stores the exercise details, duration, sets, etc.
     """
 
+    class FrequencyChoices(models.TextChoices):
+        DAILY = "DAILY", _("Daily")
+        EVERY_OTHER_DAY = "EVERY_OTHER_DAY", _("Every Other Day")
+        THREE_TIMES_WEEK = "THREE_TIMES_WEEK", _("Three Times a Week")
+        WEEKLY = "WEEKLY", _("Weekly")
+
     patient = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -138,6 +144,13 @@ class ExercisePlan(models.Model):
         default=3,
         validators=[MinValueValidator(1)],
         help_text=_("Number of sets to perform"),
+    )
+
+    frequency = models.CharField(
+        max_length=20,
+        choices=FrequencyChoices.choices,
+        default=FrequencyChoices.DAILY,
+        help_text=_("How often the patient should perform this exercise"),
     )
 
     special_instructions = models.TextField(

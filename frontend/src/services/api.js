@@ -23,7 +23,21 @@ apiClient.interceptors.request.use(
 
 // Handle token refresh on 401
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const payload = response?.data;
+
+    // Transitional normalization: unwrap standardized success payloads.
+    if (payload && Object.prototype.hasOwnProperty.call(payload, 'data')) {
+      response.data = payload.data;
+      return response;
+    }
+
+    if (payload?.success === false) {
+      return Promise.reject({ response });
+    }
+
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
 

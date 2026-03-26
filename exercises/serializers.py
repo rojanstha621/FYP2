@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Exercise
+from medicals.models import TherapistPatientAssignment
+from .models import Exercise, ExercisePlan
 from account.serializers import UserBasicSerializer
 
 
@@ -116,3 +117,81 @@ class ExerciseCreateUpdateSerializer(serializers.ModelSerializer):
         # Automatically set created_by to current user
         validated_data["created_by"] = self.context["request"].user
         return super().create(validated_data)
+
+
+class ExercisePlanSerializer(serializers.ModelSerializer):
+    therapist = serializers.PrimaryKeyRelatedField(read_only=True)
+    therapist_name = serializers.CharField(source="therapist.get_full_name", read_only=True)
+    patient_name = serializers.CharField(source="patient.get_full_name", read_only=True)
+    exercise_name = serializers.CharField(source="exercise.name", read_only=True)
+    duration = serializers.IntegerField(source="exercise_duration", read_only=True)
+    notes = serializers.CharField(source="special_instructions", read_only=True)
+
+    class Meta:
+        model = ExercisePlan
+        fields = [
+            "id",
+            "patient",
+            "patient_name",
+            "therapist",
+            "therapist_name",
+            "exercise",
+            "exercise_name",
+            "exercise_duration",
+            "duration",
+            "rest_duration",
+            "sets",
+            "frequency",
+            "special_instructions",
+            "notes",
+            "assigned_date",
+            "scheduled_date",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+
+
+class ExercisePlanCreateSerializer(serializers.ModelSerializer):
+    duration = serializers.IntegerField(source="exercise_duration")
+    notes = serializers.CharField(
+        source="special_instructions", allow_blank=True, required=False
+    )
+
+    class Meta:
+        model = ExercisePlan
+        fields = [
+            "patient",
+            "exercise",
+            "duration",
+            "rest_duration",
+            "sets",
+            "frequency",
+            "notes",
+            "is_active",
+            "scheduled_date",
+        ]
+
+    def validate(self, attrs):
+        request = self.context.get("request")
+        therapist = getattr(request, "user", None)
+        patient = attrs.get("patient")
+
+        if not therapist or not therapist.is_authenticated:
+            raise serializers.ValidationError("Authentication required.")
+
+        if getattr(therapist, "role", None) != "THERAPIST":
+            raise serializers.ValidationError("Only therapists can manage exercise plans.")
+
+        is_assigned = TherapistPatientAssignment.objects.filter(
+            therapist=therapist,
+            patient=patient,
+            is_active=True,
+        ).exists()
+
+        if not is_assigned:
+            raise serializers.ValidationError(
+                {"patient": "You can only assign plans to your active patients."}
+            )
+
+        return attrs

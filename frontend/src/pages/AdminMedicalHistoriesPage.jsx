@@ -4,7 +4,7 @@ import { Card, Button, Select } from '../components/FormElements';
 import { Alert } from '../components/Alert';
 import { Spinner } from '../components/Spinner';
 
-export const AdminMedicalHistoriesPage = () => {
+export default function AdminMedicalHistoriesPage() {
   const [histories, setHistories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -184,4 +184,4 @@ export const AdminMedicalHistoriesPage = () => {
       )}
     </div>
   );
-};
+}

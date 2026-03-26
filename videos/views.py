@@ -5,6 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
+from myproject.pagination import StandardPagination
+from myproject.utils import api_response
 
 from .models import Video, VideoAssignment
 from .serializers import (
@@ -33,6 +35,7 @@ class VideoViewSet(viewsets.ModelViewSet):
     queryset = Video.objects.all()
     serializer_class = VideoSerializer
     permission_classes = [IsAuthenticated, IsAdminRole]
+    pagination_class = StandardPagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ["is_active"]
     search_fields = ["title", "description"]
@@ -51,11 +54,10 @@ class VideoViewSet(viewsets.ModelViewSet):
         video.save()
         
         serializer = self.get_serializer(video)
-        return Response(
-            {
-                "message": f"Video {'activated' if video.is_active else 'deactivated'} successfully.",
-                "video": serializer.data,
-            }
+        return api_response(
+            data={"video": serializer.data},
+            message=f"Video {'activated' if video.is_active else 'deactivated'} successfully.",
+            status_code=status.HTTP_200_OK,
         )
 
 
@@ -72,6 +74,7 @@ class ActiveVideoViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Video.objects.filter(is_active=True)
     serializer_class = VideoListSerializer
     permission_classes = [IsAuthenticated, IsTherapistApproved]
+    pagination_class = StandardPagination
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ["title", "description"]
     ordering_fields = ["created_at", "title"]
@@ -91,6 +94,7 @@ class VideoAssignmentViewSet(viewsets.ModelViewSet):
     
     serializer_class = VideoAssignmentSerializer
     permission_classes = [IsAuthenticated, IsTherapistApproved]
+    pagination_class = StandardPagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ["patient", "video", "is_active"]
     search_fields = ["video__title", "patient__email", "patient__first_name"]
@@ -135,7 +139,11 @@ class VideoAssignmentViewSet(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
         
         serializer = self.get_serializer(assignments, many=True)
-        return Response(serializer.data)
+        return api_response(
+            data=serializer.data,
+            message="Assignments retrieved successfully",
+            status_code=status.HTTP_200_OK,
+        )
     
     @action(detail=False, methods=["get"])
     def by_patient(self, request):
@@ -161,7 +169,11 @@ class VideoAssignmentViewSet(viewsets.ModelViewSet):
                 ).data
             })
         
-        return Response(patients_data)
+        return api_response(
+            data=patients_data,
+            message="Assignments grouped by patient retrieved successfully",
+            status_code=status.HTTP_200_OK,
+        )
 
 
 class PatientVideoViewSet(viewsets.ReadOnlyModelViewSet):
@@ -175,6 +187,7 @@ class PatientVideoViewSet(viewsets.ReadOnlyModelViewSet):
     
     serializer_class = PatientVideoSerializer
     permission_classes = [IsAuthenticated, IsPatient]
+    pagination_class = StandardPagination
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ["video__title", "therapist__first_name"]
     ordering_fields = ["assigned_at", "viewed"]
@@ -198,11 +211,10 @@ class PatientVideoViewSet(viewsets.ReadOnlyModelViewSet):
             assignment.save()
         
         serializer = self.get_serializer(assignment)
-        return Response(
-            {
-                "message": "Video marked as viewed.",
-                "assignment": serializer.data,
-            }
+        return api_response(
+            data={"assignment": serializer.data},
+            message="Video marked as viewed.",
+            status_code=status.HTTP_200_OK,
         )
     
     @action(detail=False, methods=["get"])
@@ -214,10 +226,17 @@ class PatientVideoViewSet(viewsets.ReadOnlyModelViewSet):
         total_viewed = assignments.filter(viewed=True).count()
         total_unviewed = total_assigned - total_viewed
         
-        return Response({
-            "total_assigned": total_assigned,
-            "total_viewed": total_viewed,
-            "total_unviewed": total_unviewed,
-            "completion_rate": round((total_viewed / total_assigned * 100) if total_assigned > 0 else 0, 2),
-        })
+        return api_response(
+            data={
+                "total_assigned": total_assigned,
+                "total_viewed": total_viewed,
+                "total_unviewed": total_unviewed,
+                "completion_rate": round(
+                    (total_viewed / total_assigned * 100) if total_assigned > 0 else 0,
+                    2,
+                ),
+            },
+            message="Video statistics retrieved successfully",
+            status_code=status.HTTP_200_OK,
+        )
 
