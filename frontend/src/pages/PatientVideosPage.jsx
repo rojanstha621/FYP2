@@ -3,7 +3,18 @@ import { useAuth } from '../hooks/useAuth';
 import { videoAPI } from '../services/api';
 import { Alert } from '../components/Alert';
 import { Spinner } from '../components/Spinner';
+import SegmentLoopYouTubePlayer from '../components/SegmentLoopYouTubePlayer';
 import { FiPlay, FiCheckCircle, FiClock, FiUser } from 'react-icons/fi';
+
+function formatSecondsToTimestamp(seconds) {
+  if (!Number.isInteger(seconds)) {
+    return null;
+  }
+
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${String(secs).padStart(2, '0')}`;
+}
 
 export default function PatientVideosPage() {
   const { user } = useAuth();
@@ -241,6 +252,14 @@ export default function PatientVideosPage() {
                   </div>
                 )}
 
+                {Number.isInteger(assignment.segment_start_seconds) && Number.isInteger(assignment.segment_end_seconds) && (
+                  <div className="mb-3 p-2 bg-palette-beige rounded text-sm border border-palette-mauve/20">
+                    <p className="text-palette-dark">
+                      <strong>Watch Segment:</strong> {formatSecondsToTimestamp(assignment.segment_start_seconds)} - {formatSecondsToTimestamp(assignment.segment_end_seconds)} ({assignment.repeat_count || 1} times{assignment.pause_between_repeats_seconds > 0 ? `, ${assignment.pause_between_repeats_seconds}s pause` : ''})
+                    </p>
+                  </div>
+                )}
+
                 <div className="flex justify-between items-center text-sm text-palette-dark/60 mb-3">
                   <div className="flex items-center gap-1">
                     <FiUser className="text-xs" />
@@ -279,12 +298,13 @@ export default function PatientVideosPage() {
             
             <div className="space-y-4">
               <div className="aspect-video w-full bg-gray-900 rounded-lg overflow-hidden">
-                <iframe
-                  src={selectedVideo.video_details.youtube_embed_url}
+                <SegmentLoopYouTubePlayer
+                  embedUrl={selectedVideo.video_details.youtube_embed_url}
                   title={selectedVideo.video_details.title}
-                  className="w-full h-full"
-                  allowFullScreen
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  segmentStartSeconds={selectedVideo.segment_start_seconds}
+                  segmentEndSeconds={selectedVideo.segment_end_seconds}
+                  repeatCount={selectedVideo.repeat_count || 1}
+                  pauseBetweenRepeatsSeconds={selectedVideo.pause_between_repeats_seconds || 0}
                 />
               </div>
 
@@ -318,6 +338,15 @@ export default function PatientVideosPage() {
                   <div className="mt-3 p-3 bg-palette-cream border-l-4 border-palette-mauve">
                     <p className="text-sm font-medium text-palette-dark mb-1">Therapist Instructions:</p>
                     <p className="text-sm text-palette-dark/80">{selectedVideo.notes}</p>
+                  </div>
+                )}
+
+                {Number.isInteger(selectedVideo.segment_start_seconds) && Number.isInteger(selectedVideo.segment_end_seconds) && (
+                  <div className="mt-3 p-3 bg-palette-cream border-l-4 border-palette-dark">
+                    <p className="text-sm font-medium text-palette-dark mb-1">Playback Target:</p>
+                    <p className="text-sm text-palette-dark/80">
+                      This video will auto-play from {formatSecondsToTimestamp(selectedVideo.segment_start_seconds)} to {formatSecondsToTimestamp(selectedVideo.segment_end_seconds)} for {selectedVideo.repeat_count || 1} rounds{selectedVideo.pause_between_repeats_seconds > 0 ? ` with a ${selectedVideo.pause_between_repeats_seconds}-second pause between rounds` : ''}.
+                    </p>
                   </div>
                 )}
               </div>

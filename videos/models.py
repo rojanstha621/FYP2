@@ -145,6 +145,28 @@ class VideoAssignment(models.Model):
         blank=True,
         help_text=_("Therapist's notes for this assignment")
     )
+
+    segment_start_seconds = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text=_("Optional segment start time in seconds")
+    )
+
+    segment_end_seconds = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text=_("Optional segment end time in seconds")
+    )
+
+    repeat_count = models.PositiveSmallIntegerField(
+        default=1,
+        help_text=_("How many times the selected segment should repeat")
+    )
+
+    pause_between_repeats_seconds = models.PositiveSmallIntegerField(
+        default=0,
+        help_text=_("Pause duration in seconds between segment repeats")
+    )
     
     assigned_at = models.DateTimeField(
         auto_now_add=True,
@@ -185,6 +207,44 @@ class VideoAssignment(models.Model):
     def clean(self):
         """Validate assignment constraints"""
         from medicals.models import TherapistPatientAssignment
+
+        if (self.segment_start_seconds is None) != (self.segment_end_seconds is None):
+            raise ValidationError(
+                _("Provide both segment start and end times, or leave both empty.")
+            )
+
+        if (
+            self.segment_start_seconds is not None
+            and self.segment_end_seconds is not None
+            and self.segment_end_seconds <= self.segment_start_seconds
+        ):
+            raise ValidationError(
+                {"segment_end_seconds": _("Segment end time must be greater than start time.")}
+            )
+
+        if self.repeat_count < 1:
+            raise ValidationError(
+                {"repeat_count": _("Repeat count must be at least 1.")}
+            )
+
+        if self.repeat_count > 1 and self.segment_start_seconds is None:
+            raise ValidationError(
+                {"repeat_count": _("Repeat count greater than 1 requires a segment start and end.")}
+            )
+
+        if self.pause_between_repeats_seconds < 0:
+            raise ValidationError(
+                {"pause_between_repeats_seconds": _("Pause between repeats cannot be negative.")}
+            )
+
+        if self.pause_between_repeats_seconds > 0 and self.repeat_count == 1:
+            raise ValidationError(
+                {
+                    "pause_between_repeats_seconds": _(
+                        "Pause between repeats is only used when repeat count is greater than 1."
+                    )
+                }
+            )
         
         # Check if video is active
         if self.video and not self.video.is_active:

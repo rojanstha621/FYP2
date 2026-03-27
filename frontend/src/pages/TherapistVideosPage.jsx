@@ -5,6 +5,34 @@ import { Alert } from '../components/Alert';
 import { Spinner } from '../components/Spinner';
 import { FiPlay, FiUserPlus, FiEye, FiTrash2 } from 'react-icons/fi';
 
+function parseTimestampInput(value) {
+  if (!value) return null;
+
+  if (/^\d+$/.test(value.trim())) {
+    return Number(value);
+  }
+
+  const parts = value.split(':').map((part) => part.trim());
+  if (parts.length === 2) {
+    const [minutes, seconds] = parts;
+    if (/^\d+$/.test(minutes) && /^\d+$/.test(seconds) && Number(seconds) < 60) {
+      return Number(minutes) * 60 + Number(seconds);
+    }
+  }
+
+  return NaN;
+}
+
+function formatSecondsToTimestamp(seconds) {
+  if (!Number.isInteger(seconds)) {
+    return '-';
+  }
+
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${String(secs).padStart(2, '0')}`;
+}
+
 export default function TherapistVideosPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('browse'); // browse or assignments
@@ -28,6 +56,10 @@ export default function TherapistVideosPage() {
   const [assignmentData, setAssignmentData] = useState({
     patient: '',
     notes: '',
+    segment_start: '',
+    segment_end: '',
+    repeat_count: 1,
+    pause_between_repeats_seconds: 0,
   });
 
   useEffect(() => {
@@ -111,11 +143,59 @@ export default function TherapistVideosPage() {
 
   const handleAssignVideo = async (e) => {
     e.preventDefault();
+
+    const startSeconds = parseTimestampInput(assignmentData.segment_start);
+    const endSeconds = parseTimestampInput(assignmentData.segment_end);
+    const hasSegmentInput = assignmentData.segment_start.trim() || assignmentData.segment_end.trim();
+
+    if (hasSegmentInput) {
+      if (Number.isNaN(startSeconds) || Number.isNaN(endSeconds)) {
+        setError('Use valid time format for segment fields (mm:ss or total seconds).');
+        return;
+      }
+
+      if (startSeconds === null || endSeconds === null) {
+        setError('Provide both segment start and end times.');
+        return;
+      }
+
+      if (endSeconds <= startSeconds) {
+        setError('Segment end time must be greater than start time.');
+        return;
+      }
+    }
+
+    const repeatCount = Number(assignmentData.repeat_count || 1);
+    if (repeatCount < 1) {
+      setError('Repeat count must be at least 1.');
+      return;
+    }
+
+    if (!hasSegmentInput && repeatCount > 1) {
+      setError('Repeat count greater than 1 requires segment start and end times.');
+      return;
+    }
+
+    const pauseBetweenRepeatsSeconds = Number(assignmentData.pause_between_repeats_seconds || 0);
+    if (pauseBetweenRepeatsSeconds < 0) {
+      setError('Pause between repeats cannot be negative.');
+      return;
+    }
+
+    if (pauseBetweenRepeatsSeconds > 0 && repeatCount === 1) {
+      setError('Pause between repeats is only used when repeat count is greater than 1.');
+      return;
+    }
+
     try {
       await videoAPI.createAssignment({
         video: selectedVideo.id,
         patient: assignmentData.patient,
         notes: assignmentData.notes,
+        segment_start_seconds: hasSegmentInput ? startSeconds : null,
+        segment_end_seconds: hasSegmentInput ? endSeconds : null,
+        repeat_count: repeatCount,
+        pause_between_repeats_seconds: pauseBetweenRepeatsSeconds,
       });
       setSuccess('Video assigned successfully');
       setShowAssignModal(false);
@@ -154,6 +234,10 @@ export default function TherapistVideosPage() {
     setAssignmentData({
       patient: '',
       notes: '',
+      segment_start: '',
+      segment_end: '',
+      repeat_count: 1,
+      pause_between_repeats_seconds: 0,
     });
     setSelectedVideo(null);
   };
@@ -309,6 +393,9 @@ export default function TherapistVideosPage() {
                   Notes
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-palette-dark/60 uppercase tracking-wider">
+                  Segment
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-palette-dark/60 uppercase tracking-wider">
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-palette-dark/60 uppercase tracking-wider">
@@ -322,7 +409,7 @@ export default function TherapistVideosPage() {
             <tbody className="bg-palette-cream divide-y divide-palette-mauve/30">
               {assignments.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-4 text-center text-palette-dark/60">
+                  <td colSpan="7" className="px-6 py-4 text-center text-palette-dark/60">
                     No assignments found
                   </td>
                 </tr>
@@ -355,6 +442,11 @@ export default function TherapistVideosPage() {
                       <div className="text-sm text-palette-dark max-w-xs truncate">
                         {assignment.notes || '-'}
                       </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-palette-dark/70">
+                      {Number.isInteger(assignment.segment_start_seconds) && Number.isInteger(assignment.segment_end_seconds)
+                        ? `${formatSecondsToTimestamp(assignment.segment_start_seconds)} - ${formatSecondsToTimestamp(assignment.segment_end_seconds)} x${assignment.repeat_count || 1}${assignment.pause_between_repeats_seconds > 0 ? ` (${assignment.pause_between_repeats_seconds}s pause)` : ''}`
+                        : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
@@ -450,6 +542,69 @@ export default function TherapistVideosPage() {
                     className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
                   />
                 </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-palette-dark/80 mb-1">
+                      Start Time
+                    </label>
+                    <input
+                      type="text"
+                      name="segment_start"
+                      value={assignmentData.segment_start}
+                      onChange={handleInputChange}
+                      placeholder="1:40 or 100"
+                      className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-palette-dark/80 mb-1">
+                      End Time
+                    </label>
+                    <input
+                      type="text"
+                      name="segment_end"
+                      value={assignmentData.segment_end}
+                      onChange={handleInputChange}
+                      placeholder="1:55 or 115"
+                      className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-palette-dark/80 mb-1">
+                      Repeat Count
+                      
+                    </label>
+                    <input
+                      type="number"
+                      name="repeat_count"
+                      value={assignmentData.repeat_count}
+                      onChange={handleInputChange}
+                      min="1"
+                      className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-palette-dark/80 mb-1">
+                      Pause (sec)
+                    </label>
+                    <input
+                      type="number"
+                      name="pause_between_repeats_seconds"
+                      value={assignmentData.pause_between_repeats_seconds}
+                      onChange={handleInputChange}
+                      min="0"
+                      className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
+                    />
+                  </div>
+                </div>
+
+                <p className="text-xs text-palette-dark/60">
+                  Optional: provide start/end to auto-play only that segment for the patient. Use mm:ss or total seconds.
+                </p>
               </div>
 
               <div className="mt-6 flex justify-end space-x-3">

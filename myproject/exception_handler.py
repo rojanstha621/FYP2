@@ -21,6 +21,15 @@ def _extract_message(data, default_message):
             return detail
         if isinstance(detail, list) and detail:
             return str(detail[0])
+        for _, value in data.items():
+            if isinstance(value, list) and value:
+                return str(value[0])
+            if isinstance(value, str):
+                return value
+            if isinstance(value, dict):
+                nested_message = _extract_message(value, None)
+                if nested_message:
+                    return nested_message
     elif isinstance(data, list) and data:
         return str(data[0])
     elif isinstance(data, str):

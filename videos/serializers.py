@@ -99,6 +99,10 @@ class VideoAssignmentSerializer(serializers.ModelSerializer):
             "patient",
             "patient_details",
             "notes",
+            "segment_start_seconds",
+            "segment_end_seconds",
+            "repeat_count",
+            "pause_between_repeats_seconds",
             "assigned_at",
             "is_active",
             "viewed",
@@ -116,6 +120,57 @@ class VideoAssignmentSerializer(serializers.ModelSerializer):
         video = attrs.get("video")
         therapist = attrs.get("therapist")
         patient = attrs.get("patient")
+
+        start = attrs.get(
+            "segment_start_seconds",
+            self.instance.segment_start_seconds if self.instance else None,
+        )
+        end = attrs.get(
+            "segment_end_seconds",
+            self.instance.segment_end_seconds if self.instance else None,
+        )
+        repeat_count = attrs.get(
+            "repeat_count",
+            self.instance.repeat_count if self.instance else 1,
+        )
+        pause_between_repeats_seconds = attrs.get(
+            "pause_between_repeats_seconds",
+            self.instance.pause_between_repeats_seconds if self.instance else 0,
+        )
+
+        if (start is None) != (end is None):
+            raise serializers.ValidationError(
+                "Provide both segment start and end times, or leave both empty."
+            )
+
+        if start is not None and end is not None and end <= start:
+            raise serializers.ValidationError(
+                {"segment_end_seconds": "Segment end time must be greater than start time."}
+            )
+
+        if repeat_count is None or repeat_count < 1:
+            raise serializers.ValidationError(
+                {"repeat_count": "Repeat count must be at least 1."}
+            )
+
+        if repeat_count > 1 and start is None:
+            raise serializers.ValidationError(
+                {"repeat_count": "Repeat count greater than 1 requires segment start and end times."}
+            )
+
+        if pause_between_repeats_seconds is None or pause_between_repeats_seconds < 0:
+            raise serializers.ValidationError(
+                {"pause_between_repeats_seconds": "Pause between repeats cannot be negative."}
+            )
+
+        if pause_between_repeats_seconds > 0 and repeat_count == 1:
+            raise serializers.ValidationError(
+                {
+                    "pause_between_repeats_seconds": (
+                        "Pause between repeats is only used when repeat count is greater than 1."
+                    )
+                }
+            )
         
         # For create operations
         if not self.instance:
@@ -168,6 +223,10 @@ class VideoAssignmentCreateSerializer(serializers.ModelSerializer):
             "video",
             "patient",
             "notes",
+            "segment_start_seconds",
+            "segment_end_seconds",
+            "repeat_count",
+            "pause_between_repeats_seconds",
         ]
         read_only_fields = ["id"]
     
@@ -175,12 +234,50 @@ class VideoAssignmentCreateSerializer(serializers.ModelSerializer):
         """Validate assignment constraints"""
         video = attrs.get("video")
         patient = attrs.get("patient")
+        start = attrs.get("segment_start_seconds")
+        end = attrs.get("segment_end_seconds")
+        repeat_count = attrs.get("repeat_count", 1)
+        pause_between_repeats_seconds = attrs.get("pause_between_repeats_seconds", 0)
         
         # Therapist comes from context
         therapist = self.context.get("request").user if self.context.get("request") else None
         
         if not therapist:
             raise serializers.ValidationError("Authentication required.")
+
+        if (start is None) != (end is None):
+            raise serializers.ValidationError(
+                "Provide both segment start and end times, or leave both empty."
+            )
+
+        if start is not None and end is not None and end <= start:
+            raise serializers.ValidationError(
+                {"segment_end_seconds": "Segment end time must be greater than start time."}
+            )
+
+        if repeat_count is None or repeat_count < 1:
+            raise serializers.ValidationError(
+                {"repeat_count": "Repeat count must be at least 1."}
+            )
+
+        if repeat_count > 1 and start is None:
+            raise serializers.ValidationError(
+                {"repeat_count": "Repeat count greater than 1 requires segment start and end times."}
+            )
+
+        if pause_between_repeats_seconds is None or pause_between_repeats_seconds < 0:
+            raise serializers.ValidationError(
+                {"pause_between_repeats_seconds": "Pause between repeats cannot be negative."}
+            )
+
+        if pause_between_repeats_seconds > 0 and repeat_count == 1:
+            raise serializers.ValidationError(
+                {
+                    "pause_between_repeats_seconds": (
+                        "Pause between repeats is only used when repeat count is greater than 1."
+                    )
+                }
+            )
         
         # Check if video is active
         if video and not video.is_active:
@@ -239,6 +336,10 @@ class PatientVideoSerializer(serializers.ModelSerializer):
             "video_details",
             "therapist_name",
             "notes",
+            "segment_start_seconds",
+            "segment_end_seconds",
+            "repeat_count",
+            "pause_between_repeats_seconds",
             "assigned_at",
             "viewed",
             "viewed_at",

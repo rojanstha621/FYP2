@@ -218,6 +218,63 @@ class VideoAssignmentTest(APITestCase):
         response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(VideoAssignment.objects.count(), 1)
+
+    def test_therapist_can_assign_video_with_segment_repeat(self):
+        """Test assignment with segment start/end and repeat count"""
+        self.client.force_authenticate(user=self.therapist)
+
+        url = reverse("video-assignment-list")
+        data = {
+            "video": self.video.id,
+            "patient": self.patient.id,
+            "notes": "Watch this section carefully",
+            "segment_start_seconds": 100,
+            "segment_end_seconds": 115,
+            "repeat_count": 3,
+            "pause_between_repeats_seconds": 5,
+        }
+
+        response = self.client.post(url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        assignment = VideoAssignment.objects.get(video=self.video, patient=self.patient, therapist=self.therapist)
+        self.assertEqual(assignment.segment_start_seconds, 100)
+        self.assertEqual(assignment.segment_end_seconds, 115)
+        self.assertEqual(assignment.repeat_count, 3)
+        self.assertEqual(assignment.pause_between_repeats_seconds, 5)
+
+    def test_assignment_rejects_invalid_segment_range(self):
+        """Test that end time must be greater than start time"""
+        self.client.force_authenticate(user=self.therapist)
+
+        url = reverse("video-assignment-list")
+        data = {
+            "video": self.video.id,
+            "patient": self.patient.id,
+            "segment_start_seconds": 115,
+            "segment_end_seconds": 100,
+            "repeat_count": 3,
+        }
+
+        response = self.client.post(url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_assignment_rejects_pause_without_repeat(self):
+        """Test pause is rejected when repeat count is 1"""
+        self.client.force_authenticate(user=self.therapist)
+
+        url = reverse("video-assignment-list")
+        data = {
+            "video": self.video.id,
+            "patient": self.patient.id,
+            "segment_start_seconds": 100,
+            "segment_end_seconds": 115,
+            "repeat_count": 1,
+            "pause_between_repeats_seconds": 5,
+        }
+
+        response = self.client.post(url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
     
     def test_duplicate_assignment_prevented(self):
         """Test that duplicate assignments are prevented"""
