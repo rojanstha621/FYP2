@@ -1,9 +1,49 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { videoAPI, assignmentAPI } from '../services/api';
 import { Alert } from '../components/Alert';
 import { Spinner } from '../components/Spinner';
 import { FiPlay, FiUserPlus, FiEye, FiTrash2 } from 'react-icons/fi';
+
+const DEFAULT_SEGMENT_SLIDER_MAX_SECONDS = 1800;
+
+let youtubeIframeApiPromise = null;
+
+function loadYouTubeIframeApi() {
+  if (window.YT?.Player) {
+    return Promise.resolve(window.YT);
+  }
+
+  if (!youtubeIframeApiPromise) {
+    youtubeIframeApiPromise = new Promise((resolve) => {
+      const existingScript = document.getElementById('youtube-iframe-api');
+      if (!existingScript) {
+        const script = document.createElement('script');
+        script.id = 'youtube-iframe-api';
+        script.src = 'https://www.youtube.com/iframe_api';
+        script.async = true;
+        document.body.appendChild(script);
+      }
+
+      const previousReady = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => {
+        if (typeof previousReady === 'function') {
+          previousReady();
+        }
+        resolve(window.YT);
+      };
+
+      const checkInterval = window.setInterval(() => {
+        if (window.YT?.Player) {
+          window.clearInterval(checkInterval);
+          resolve(window.YT);
+        }
+      }, 100);
+    });
+  }
+
+  return youtubeIframeApiPromise;
+}
 
 function parseTimestampInput(value) {
   if (!value) return null;
@@ -15,7 +55,7 @@ function parseTimestampInput(value) {
   const parts = value.split(':').map((part) => part.trim());
   if (parts.length === 2) {
     const [minutes, seconds] = parts;
-    if (/^\d+$/.test(minutes) && /^\d+$/.test(seconds) && Number(seconds) < 60) {
+    if (/^\d+$/.test(minutes) && /^\d+$/.test(seconds)) {
       return Number(minutes) * 60 + Number(seconds);
     }
   }
@@ -31,6 +71,33 @@ function formatSecondsToTimestamp(seconds) {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${mins}:${String(secs).padStart(2, '0')}`;
+}
+
+function buildSegmentPreviewUrl(embedUrl, startSeconds, endSeconds) {
+  if (!embedUrl) {
+    return '';
+  }
+
+  const startIsValid = Number.isInteger(startSeconds) && startSeconds >= 0;
+  const endIsValid = Number.isInteger(endSeconds) && endSeconds > 0;
+  const hasSegment = startIsValid && endIsValid && endSeconds > startSeconds;
+
+  const separator = embedUrl.includes('?') ? '&' : '?';
+  let url = `${embedUrl}${separator}autoplay=1&rel=0`;
+
+  if (hasSegment) {
+    url += `&start=${startSeconds}&end=${endSeconds}`;
+  }
+
+  return url;
+}
+
+function extractYouTubeVideoIdFromEmbedUrl(embedUrl = '') {
+  const embedMatch = embedUrl.match(/\/embed\/([a-zA-Z0-9_-]{11})/);
+  if (embedMatch) {
+    return embedMatch[1];
+  }
+  return null;
 }
 
 export default function TherapistVideosPage() {
@@ -51,6 +118,8 @@ export default function TherapistVideosPage() {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState(null);
+  const [segmentSliderMaxSeconds, setSegmentSliderMaxSeconds] = useState(DEFAULT_SEGMENT_SLIDER_MAX_SECONDS);
+  const [isDurationLoading, setIsDurationLoading] = useState(false);
   
   // Form data
   const [assignmentData, setAssignmentData] = useState({
@@ -70,6 +139,130 @@ export default function TherapistVideosPage() {
     }
     fetchMyPatients();
   }, [activeTab, searchTerm, patientFilter]);
+
+  useEffect(() => {
+    if (!showAssignModal || !selectedVideo?.youtube_embed_url) {
+      setSegmentSliderMaxSeconds(DEFAULT_SEGMENT_SLIDER_MAX_SECONDS);
+      setIsDurationLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    let probePlayer = null;
+    let probeElement = null;
+
+    const cleanupProbe = () => {
+      if (probePlayer?.destroy) {
+        probePlayer.destroy();
+      }
+      if (probeElement?.parentNode) {
+        probeElement.parentNode.removeChild(probeElement);
+      }
+    };
+
+    const probeVideoDuration = async () => {
+      try {
+        const videoId = extractYouTubeVideoIdFromEmbedUrl(selectedVideo.youtube_embed_url);
+        if (!videoId) {
+          setSegmentSliderMaxSeconds(DEFAULT_SEGMENT_SLIDER_MAX_SECONDS);
+          return;
+        }
+
+        setIsDurationLoading(true);
+        const YT = await loadYouTubeIframeApi();
+        if (cancelled) {
+          return;
+        }
+
+        probeElement = document.createElement('div');
+        probeElement.style.position = 'absolute';
+        probeElement.style.left = '-9999px';
+        probeElement.style.width = '1px';
+        probeElement.style.height = '1px';
+        document.body.appendChild(probeElement);
+
+        probePlayer = new YT.Player(probeElement, {
+          videoId,
+          events: {
+            onReady: (event) => {
+              if (cancelled) {
+                cleanupProbe();
+                return;
+              }
+
+              const durationSeconds = Math.floor(event.target.getDuration?.() || 0);
+              const normalizedDuration = durationSeconds > 1
+                ? durationSeconds
+                : DEFAULT_SEGMENT_SLIDER_MAX_SECONDS;
+
+              setSegmentSliderMaxSeconds(normalizedDuration);
+              setIsDurationLoading(false);
+              cleanupProbe();
+            },
+            onError: () => {
+              if (!cancelled) {
+                setSegmentSliderMaxSeconds(DEFAULT_SEGMENT_SLIDER_MAX_SECONDS);
+                setIsDurationLoading(false);
+              }
+              cleanupProbe();
+            },
+          },
+        });
+      } catch (err) {
+        if (!cancelled) {
+          setSegmentSliderMaxSeconds(DEFAULT_SEGMENT_SLIDER_MAX_SECONDS);
+          setIsDurationLoading(false);
+        }
+        cleanupProbe();
+      }
+    };
+
+    probeVideoDuration();
+
+    return () => {
+      cancelled = true;
+      cleanupProbe();
+    };
+  }, [showAssignModal, selectedVideo?.youtube_embed_url]);
+
+  useEffect(() => {
+    setAssignmentData((prev) => {
+      const start = parseTimestampInput(prev.segment_start);
+      const end = parseTimestampInput(prev.segment_end);
+      let nextStart = start;
+      let nextEnd = end;
+      let changed = false;
+
+      if (Number.isInteger(nextStart) && nextStart >= segmentSliderMaxSeconds) {
+        nextStart = Math.max(segmentSliderMaxSeconds - 1, 0);
+        changed = true;
+      }
+
+      if (Number.isInteger(nextEnd) && nextEnd > segmentSliderMaxSeconds) {
+        nextEnd = segmentSliderMaxSeconds;
+        changed = true;
+      }
+
+      if (Number.isInteger(nextStart) && Number.isInteger(nextEnd) && nextEnd <= nextStart) {
+        nextEnd = Math.min(nextStart + 1, segmentSliderMaxSeconds);
+        changed = true;
+      }
+
+      if (!changed) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        segment_start: Number.isInteger(nextStart)
+          ? formatSecondsToTimestamp(nextStart)
+          : prev.segment_start,
+        segment_end: Number.isInteger(nextEnd)
+          ? formatSecondsToTimestamp(nextEnd)
+          : prev.segment_end,
+      };
+    });
+  }, [segmentSliderMaxSeconds]);
 
   const fetchVideos = async () => {
     try {
@@ -249,6 +442,42 @@ export default function TherapistVideosPage() {
       [name]: value
     }));
   };
+
+  const handleSegmentSliderChange = (name, value) => {
+    setAssignmentData((prev) => {
+      const next = { ...prev, [name]: formatSecondsToTimestamp(value) };
+      const start = parseTimestampInput(next.segment_start);
+      const end = parseTimestampInput(next.segment_end);
+
+      if (Number.isInteger(start) && Number.isInteger(end) && end <= start) {
+        if (name === 'segment_start') {
+          next.segment_end = formatSecondsToTimestamp(Math.min(start + 1, segmentSliderMaxSeconds));
+        } else {
+          next.segment_start = formatSecondsToTimestamp(Math.max(end - 1, 0));
+        }
+      }
+
+      return next;
+    });
+  };
+
+  const sliderStartRaw = parseTimestampInput(assignmentData.segment_start);
+  const sliderEndRaw = parseTimestampInput(assignmentData.segment_end);
+  const safeSliderMaxSeconds = Math.max(segmentSliderMaxSeconds, 2);
+  const sliderStartValue = Number.isInteger(sliderStartRaw)
+    ? Math.min(Math.max(sliderStartRaw, 0), safeSliderMaxSeconds - 1)
+    : 0;
+  const sliderEndValue = Number.isInteger(sliderEndRaw)
+    ? Math.min(Math.max(sliderEndRaw, sliderStartValue + 1), safeSliderMaxSeconds)
+    : Math.min(sliderStartValue + 15, safeSliderMaxSeconds);
+
+  const previewEmbedUrl = useMemo(() => {
+    return buildSegmentPreviewUrl(
+      selectedVideo?.youtube_embed_url,
+      sliderStartValue,
+      sliderEndValue,
+    );
+  }, [selectedVideo?.youtube_embed_url, sliderStartValue, sliderEndValue]);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -543,6 +772,50 @@ export default function TherapistVideosPage() {
                   />
                 </div>
 
+                <div className="space-y-3 border border-palette-mauve/30 bg-palette-beige/60 rounded-md p-3">
+                  <p className="text-sm font-medium text-palette-dark/90">Segment Picker</p>
+                  <div className="aspect-video w-full rounded overflow-hidden bg-black">
+                    <iframe
+                      key={previewEmbedUrl}
+                      src={previewEmbedUrl || selectedVideo.youtube_embed_url}
+                      title={selectedVideo.title}
+                      className="w-full h-full"
+                      allowFullScreen
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-xs text-palette-dark/70 mb-1">
+                      <span>Start: {formatSecondsToTimestamp(sliderStartValue)}</span>
+                      <span>End: {formatSecondsToTimestamp(sliderEndValue)}</span>
+                    </div>
+                    <p className="text-xs text-palette-dark/70 mb-2">
+                      {isDurationLoading
+                        ? 'Detecting video length...'
+                        : `Video length: ${formatSecondsToTimestamp(safeSliderMaxSeconds)}`}
+                    </p>
+                    <label className="block text-xs text-palette-dark/80 mb-1">Start Slider</label>
+                    <input
+                      type="range"
+                      min="0"
+                      max={String(safeSliderMaxSeconds - 1)}
+                      value={sliderStartValue}
+                      onChange={(e) => handleSegmentSliderChange('segment_start', Number(e.target.value))}
+                      className="w-full accent-palette-mauve"
+                    />
+                    <label className="block text-xs text-palette-dark/80 mb-1 mt-2">End Slider</label>
+                    <input
+                      type="range"
+                      min={String(sliderStartValue + 1)}
+                      max={String(safeSliderMaxSeconds)}
+                      value={sliderEndValue}
+                      onChange={(e) => handleSegmentSliderChange('segment_end', Number(e.target.value))}
+                      className="w-full accent-palette-mauve"
+                    />
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                   <div>
                     <label className="block text-sm font-medium text-palette-dark/80 mb-1">
@@ -553,7 +826,7 @@ export default function TherapistVideosPage() {
                       name="segment_start"
                       value={assignmentData.segment_start}
                       onChange={handleInputChange}
-                      placeholder="1:40 or 100"
+                      placeholder="00:50"
                       className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
                     />
                   </div>
@@ -567,7 +840,7 @@ export default function TherapistVideosPage() {
                       name="segment_end"
                       value={assignmentData.segment_end}
                       onChange={handleInputChange}
-                      placeholder="1:55 or 115"
+                      placeholder="1:90"
                       className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
                     />
                   </div>
@@ -603,7 +876,7 @@ export default function TherapistVideosPage() {
                 </div>
 
                 <p className="text-xs text-palette-dark/60">
-                  Optional: provide start/end to auto-play only that segment for the patient. Use mm:ss or total seconds.
+                  Moving the slider reloads preview from the selected start/end. Use mm:ss or total seconds.
                 </p>
               </div>
 
