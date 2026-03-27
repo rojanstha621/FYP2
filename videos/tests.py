@@ -49,6 +49,27 @@ class VideoModelTest(TestCase):
         video_id = extract_youtube_video_id("https://www.youtube.com/embed/dQw4w9WgXcQ")
         self.assertEqual(video_id, "dQw4w9WgXcQ")
 
+        # Shorts URL
+        video_id = extract_youtube_video_id("https://www.youtube.com/shorts/dQw4w9WgXcQ")
+        self.assertEqual(video_id, "dQw4w9WgXcQ")
+
+        # Shorts URL with query params
+        video_id = extract_youtube_video_id("https://www.youtube.com/shorts/dQw4w9WgXcQ?si=abc123")
+        self.assertEqual(video_id, "dQw4w9WgXcQ")
+
+    def test_video_creation_from_shorts_url(self):
+        """Test creating a video from YouTube Shorts URL"""
+        video = Video.objects.create(
+            title="Shorts Video",
+            description="Shorts Description",
+            youtube_url="https://www.youtube.com/shorts/dQw4w9WgXcQ",
+            created_by=self.admin
+        )
+
+        self.assertEqual(video.title, "Shorts Video")
+        self.assertEqual(video.youtube_embed_url, "https://www.youtube.com/embed/dQw4w9WgXcQ")
+        self.assertEqual(video.thumbnail_url, "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg")
+
 
 class VideoAPITest(APITestCase):
     """Test Video API endpoints"""
