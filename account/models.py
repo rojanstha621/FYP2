@@ -97,6 +97,10 @@ class UserProfile(models.Model):
 
     # Basic profile fields
     profile_picture = models.ImageField(upload_to="profiles/", blank=True, null=True)
+    # Persist a copy of profile image in DB as requested.
+    profile_picture_blob = models.BinaryField(blank=True, null=True, editable=False)
+    profile_picture_name = models.CharField(max_length=255, blank=True, null=True)
+    profile_picture_content_type = models.CharField(max_length=100, blank=True, null=True)
     address = models.CharField(max_length=255, blank=True, null=True)
 
     bio = models.TextField(blank=True, null=True)

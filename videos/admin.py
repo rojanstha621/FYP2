@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Video, VideoAssignment
+from .models import Video, VideoAssignment, DailyVideoLog
 
 
 @admin.register(Video)
@@ -125,4 +125,24 @@ class VideoAssignmentAdmin(admin.ModelAdmin):
         """Optimize queryset with select_related"""
         qs = super().get_queryset(request)
         return qs.select_related("video", "therapist", "patient")
+
+
+class DailyVideoLogInline(admin.TabularInline):
+    model = DailyVideoLog
+    extra = 0
+    readonly_fields = ["scheduled_date", "status", "viewed", "viewed_at"]
+    can_delete = False
+
+
+@admin.register(DailyVideoLog)
+class DailyVideoLogAdmin(admin.ModelAdmin):
+    list_display = ["assignment", "scheduled_date", "status", "viewed", "viewed_at"]
+    list_filter = ["status", "viewed", "scheduled_date"]
+    search_fields = [
+        "assignment__video__title",
+        "assignment__patient__email",
+        "assignment__therapist__email",
+    ]
+    readonly_fields = ["viewed_at"]
+    ordering = ["-scheduled_date"]
 

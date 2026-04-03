@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import generics
+from django.http import HttpResponse
 
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -84,7 +85,7 @@ class MeView(APIView):
 
         data = {
             "user": UserBasicSerializer(request.user).data,
-            "profile": UserProfileSerializer(profile).data,
+            "profile": UserProfileSerializer(profile, context={"request": request}).data,
         }
         return APIResponse.send(
             is_success=True,
@@ -107,14 +108,14 @@ class MeView(APIView):
         user_serializer.save()
 
         profile_serializer = UserProfileSerializer(
-            profile, data=request.data, partial=True
+            profile, data=request.data, partial=True, context={"request": request}
         )
         profile_serializer.is_valid(raise_exception=True)
         profile_serializer.save()
 
         data = {
             "user": UserBasicSerializer(request.user).data,
-            "profile": UserProfileSerializer(profile).data,
+            "profile": UserProfileSerializer(profile, context={"request": request}).data,
         }
         return APIResponse.send(
             is_success=True,
@@ -137,7 +138,9 @@ class ProfileUpdateView(APIView):
     def patch(self, request):
         profile, _ = UserProfile.objects.get_or_create(user=request.user)
 
-        serializer = UserProfileSerializer(profile, data=request.data, partial=True)
+        serializer = UserProfileSerializer(
+            profile, data=request.data, partial=True, context={"request": request}
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
@@ -146,6 +149,48 @@ class ProfileUpdateView(APIView):
             message="Profile updated successfully",
             result=serializer.data,
             status_code=status.HTTP_200_OK,
+        )
+
+
+class ProfilePictureDBView(APIView):
+    """Serve profile picture from DB blob storage with media-file fallback."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id):
+        profile = UserProfile.objects.filter(user_id=id).first()
+        if not profile:
+            return APIResponse.send(
+                is_success=False,
+                message="Profile not found",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
+        if profile.profile_picture_blob:
+            content_type = profile.profile_picture_content_type or "application/octet-stream"
+            response = HttpResponse(profile.profile_picture_blob, content_type=content_type)
+            if profile.profile_picture_name:
+                response["Content-Disposition"] = (
+                    f'inline; filename="{profile.profile_picture_name}"'
+                )
+            return response
+
+        if profile.profile_picture:
+            try:
+                with profile.profile_picture.open("rb") as f:
+                    data = f.read()
+                response = HttpResponse(data, content_type="application/octet-stream")
+                response["Content-Disposition"] = (
+                    f'inline; filename="{profile.profile_picture.name.rsplit("/", 1)[-1]}"'
+                )
+                return response
+            except Exception:
+                pass
+
+        return APIResponse.send(
+            is_success=False,
+            message="Profile picture not found",
+            status_code=status.HTTP_404_NOT_FOUND,
         )
 
 

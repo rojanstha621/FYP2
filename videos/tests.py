@@ -296,6 +296,41 @@ class VideoAssignmentTest(APITestCase):
         
         response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_can_reassign_after_soft_delete_without_server_error(self):
+        """Test therapist can reassign after soft delete and assignment is reactivated."""
+        assignment = VideoAssignment.objects.create(
+            video=self.video,
+            therapist=self.therapist,
+            patient=self.patient,
+            notes="old notes",
+            is_active=False,
+            repeat_count=2,
+            segment_start_seconds=10,
+            segment_end_seconds=20,
+            pause_between_repeats_seconds=3,
+        )
+
+        self.client.force_authenticate(user=self.therapist)
+
+        url = reverse("video-assignment-list")
+        data = {
+            "video": self.video.id,
+            "patient": self.patient.id,
+            "notes": "new notes",
+        }
+
+        response = self.client.post(url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(VideoAssignment.objects.count(), 1)
+
+        assignment.refresh_from_db()
+        self.assertTrue(assignment.is_active)
+        self.assertEqual(assignment.notes, "new notes")
+        self.assertEqual(assignment.repeat_count, 1)
+        self.assertIsNone(assignment.segment_start_seconds)
+        self.assertIsNone(assignment.segment_end_seconds)
+        self.assertEqual(assignment.pause_between_repeats_seconds, 0)
     
     def test_therapist_cannot_assign_to_unassigned_patient(self):
         """Test that therapist cannot assign video to patient they're not assigned to"""

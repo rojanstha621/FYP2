@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { videoAPI, assignmentAPI } from '../services/api';
 import { Alert } from '../components/Alert';
 import { Spinner } from '../components/Spinner';
-import { FiPlay, FiUserPlus, FiEye, FiTrash2 } from 'react-icons/fi';
+import { FiPlay, FiUserPlus, FiEye, FiTrash2, FiCalendar, FiClock, FiBarChart2 } from 'react-icons/fi';
 
 const DEFAULT_SEGMENT_SLIDER_MAX_SECONDS = 1800;
 
@@ -102,6 +103,7 @@ function extractYouTubeVideoIdFromEmbedUrl(embedUrl = '') {
 
 export default function TherapistVideosPage() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('browse'); // browse or assignments
   const [videos, setVideos] = useState([]);
   const [assignments, setAssignments] = useState([]);
@@ -121,6 +123,11 @@ export default function TherapistVideosPage() {
   const [segmentSliderMaxSeconds, setSegmentSliderMaxSeconds] = useState(DEFAULT_SEGMENT_SLIDER_MAX_SECONDS);
   const [isDurationLoading, setIsDurationLoading] = useState(false);
   
+  // Progress panel
+  const [showProgressPanel, setShowProgressPanel] = useState(false);
+  const [progressData, setProgressData] = useState(null);
+  const [progressLoading, setProgressLoading] = useState(false);
+
   // Form data
   const [assignmentData, setAssignmentData] = useState({
     patient: '',
@@ -129,7 +136,20 @@ export default function TherapistVideosPage() {
     segment_end: '',
     repeat_count: 1,
     pause_between_repeats_seconds: 0,
+    // schedule
+    use_schedule: false,
+    schedule_start_date: '',
+    schedule_duration_days: 10,
+    scheduled_time: '05:00',
   });
+
+  useEffect(() => {
+    const patientId = searchParams.get('patient');
+    if (patientId) {
+      setActiveTab('assignments');
+      setPatientFilter(patientId);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (activeTab === 'browse') {
@@ -380,6 +400,23 @@ export default function TherapistVideosPage() {
       return;
     }
 
+    // Validate schedule fields if enabled
+    if (assignmentData.use_schedule) {
+      if (!assignmentData.schedule_start_date) {
+        setError('Please select a start date for the schedule.');
+        return;
+      }
+      const days = Number(assignmentData.schedule_duration_days);
+      if (!days || days < 1) {
+        setError('Schedule duration must be at least 1 day.');
+        return;
+      }
+      if (!assignmentData.scheduled_time) {
+        setError('Please select a daily unlock time.');
+        return;
+      }
+    }
+
     try {
       await videoAPI.createAssignment({
         video: selectedVideo.id,
@@ -389,6 +426,11 @@ export default function TherapistVideosPage() {
         segment_end_seconds: hasSegmentInput ? endSeconds : null,
         repeat_count: repeatCount,
         pause_between_repeats_seconds: pauseBetweenRepeatsSeconds,
+        ...(assignmentData.use_schedule && {
+          schedule_start_date: assignmentData.schedule_start_date,
+          schedule_duration_days: Number(assignmentData.schedule_duration_days),
+          scheduled_time: assignmentData.scheduled_time,
+        }),
       });
       setSuccess('Video assigned successfully');
       setShowAssignModal(false);
@@ -423,6 +465,21 @@ export default function TherapistVideosPage() {
     setShowAssignModal(true);
   };
 
+  const handleViewProgress = async (assignment) => {
+    setProgressData(null);
+    setShowProgressPanel(true);
+    setProgressLoading(true);
+    try {
+      const res = await videoAPI.getScheduleProgress(assignment.id);
+      setProgressData(res.data);
+    } catch (err) {
+      setError('Failed to load schedule progress');
+      setShowProgressPanel(false);
+    } finally {
+      setProgressLoading(false);
+    }
+  };
+
   const resetAssignmentForm = () => {
     setAssignmentData({
       patient: '',
@@ -431,6 +488,10 @@ export default function TherapistVideosPage() {
       segment_end: '',
       repeat_count: 1,
       pause_between_repeats_seconds: 0,
+      use_schedule: false,
+      schedule_start_date: '',
+      schedule_duration_days: 10,
+      scheduled_time: '05:00',
     });
     setSelectedVideo(null);
   };
@@ -678,15 +739,35 @@ export default function TherapistVideosPage() {
                         : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          assignment.viewed
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}
-                      >
-                        {assignment.viewed ? 'Viewed' : 'Pending'}
-                      </span>
+                      {assignment.is_scheduled ? (
+                        <div className="space-y-1">
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                            <FiCalendar className="mr-1 mt-0.5" /> Scheduled
+                          </span>
+                          <div className="text-xs text-palette-dark/60">
+                            {assignment.schedule_start_date} → {assignment.schedule_end_date}
+                          </div>
+                          <div className="text-xs text-palette-dark/60 flex items-center gap-1">
+                            <FiClock className="inline" /> {assignment.scheduled_time}
+                          </div>
+                          {assignment.schedule_progress && (
+                            <div className="text-xs text-palette-dark/70">
+                              ✅ {assignment.schedule_progress.viewed_days} /
+                              {assignment.schedule_duration_days} days done
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            assignment.viewed
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}
+                        >
+                          {assignment.viewed ? 'Viewed' : 'Pending'}
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-palette-dark/60">
                       {new Date(assignment.assigned_at).toLocaleDateString()}
@@ -699,6 +780,15 @@ export default function TherapistVideosPage() {
                       >
                         <FiEye className="inline" />
                       </button>
+                      {assignment.is_scheduled && (
+                        <button
+                          onClick={() => handleViewProgress(assignment)}
+                          className="text-green-600 hover:text-green-800 mr-3"
+                          title="View Schedule Progress"
+                        >
+                          <FiBarChart2 className="inline" />
+                        </button>
+                      )}
                       <button
                         onClick={() => handleUnassignVideo(assignment.id)}
                         className="text-red-600 hover:text-red-900"
@@ -878,6 +968,73 @@ export default function TherapistVideosPage() {
                 <p className="text-xs text-palette-dark/60">
                   Moving the slider reloads preview from the selected start/end. Use mm:ss or total seconds.
                 </p>
+
+                {/* ── Daily Schedule ── */}
+                <div className="border border-palette-mauve/30 bg-palette-beige/60 rounded-md p-3 space-y-3">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={assignmentData.use_schedule}
+                      onChange={(e) =>
+                        setAssignmentData((p) => ({ ...p, use_schedule: e.target.checked }))
+                      }
+                      className="accent-palette-mauve w-4 h-4"
+                    />
+                    <span className="text-sm font-medium text-palette-dark flex items-center gap-1">
+                      <FiCalendar className="inline" /> Enable Daily Schedule
+                    </span>
+                  </label>
+
+                  {assignmentData.use_schedule && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+                      <div>
+                        <label className="block text-xs font-medium text-palette-dark/80 mb-1">
+                          Start Date *
+                        </label>
+                        <input
+                          type="date"
+                          name="schedule_start_date"
+                          value={assignmentData.schedule_start_date}
+                          onChange={handleInputChange}
+                          min={new Date().toISOString().split('T')[0]}
+                          required
+                          className="w-full px-2 py-2 border border-palette-mauve rounded-md bg-palette-beige text-sm focus:outline-none focus:ring-2 focus:ring-palette-mauve"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-palette-dark/80 mb-1">
+                          Duration (days) *
+                        </label>
+                        <input
+                          type="number"
+                          name="schedule_duration_days"
+                          value={assignmentData.schedule_duration_days}
+                          onChange={handleInputChange}
+                          min="1"
+                          required
+                          className="w-full px-2 py-2 border border-palette-mauve rounded-md bg-palette-beige text-sm focus:outline-none focus:ring-2 focus:ring-palette-mauve"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-palette-dark/80 mb-1">
+                          Unlock Time (daily) *
+                        </label>
+                        <input
+                          type="time"
+                          name="scheduled_time"
+                          value={assignmentData.scheduled_time}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-2 py-2 border border-palette-mauve rounded-md bg-palette-beige text-sm focus:outline-none focus:ring-2 focus:ring-palette-mauve"
+                        />
+                      </div>
+                      <p className="col-span-full text-xs text-palette-dark/60">
+                        The video will unlock for the patient every day at the set time.
+                        Once watched that day, it disappears until the next day.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="mt-6 flex justify-end space-x-3">
@@ -899,6 +1056,118 @@ export default function TherapistVideosPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Progress Modal */}
+      {showProgressPanel && (
+        <div className="fixed inset-0 bg-palette-dark/50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border border-palette-mauve/20 w-full max-w-2xl shadow-lg rounded-md bg-palette-cream">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-palette-dark flex items-center gap-2">
+                <FiBarChart2 /> Schedule Progress
+              </h3>
+              <button
+                onClick={() => { setShowProgressPanel(false); setProgressData(null); }}
+                className="text-palette-dark/50 hover:text-palette-dark text-2xl"
+              >×</button>
+            </div>
+
+            {progressLoading ? (
+              <div className="flex justify-center py-10"><Spinner /></div>
+            ) : progressData ? (
+              <div className="space-y-4">
+                {/* Summary */}
+                <div className="bg-palette-beige rounded-lg p-4 border border-palette-mauve/20">
+                  <p className="font-semibold text-palette-dark mb-1">{progressData.video_title}</p>
+                  <p className="text-sm text-palette-dark/70">Patient: {progressData.patient}</p>
+                  <p className="text-sm text-palette-dark/70">
+                    Schedule: {progressData.schedule_start_date} → {progressData.schedule_end_date}
+                    &nbsp;·&nbsp;Unlocks at {progressData.scheduled_time} daily
+                  </p>
+                </div>
+
+                {/* Stat cards */}
+                <div className="grid grid-cols-4 gap-3">
+                  {[
+                    { label: 'Total Days', value: progressData.total_days, color: 'bg-blue-100 text-blue-800' },
+                    { label: 'Viewed', value: progressData.viewed_days, color: 'bg-green-100 text-green-800' },
+                    { label: 'Missed', value: progressData.missed_days, color: 'bg-red-100 text-red-800' },
+                    { label: 'Remaining', value: progressData.pending_days, color: 'bg-yellow-100 text-yellow-800' },
+                  ].map(({ label, value, color }) => (
+                    <div key={label} className={`rounded-lg p-3 text-center ${color}`}>
+                      <p className="text-2xl font-bold">{value}</p>
+                      <p className="text-xs font-medium mt-0.5">{label}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Progress bar */}
+                <div>
+                  <div className="flex justify-between text-xs text-palette-dark/60 mb-1">
+                    <span>Completion</span>
+                    <span>
+                      {progressData.total_days > 0
+                        ? Math.round((progressData.viewed_days / progressData.total_days) * 100)
+                        : 0}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-palette-beige rounded-full h-3">
+                    <div
+                      className="bg-green-500 h-3 rounded-full transition-all"
+                      style={{
+                        width: `${progressData.total_days > 0
+                          ? (progressData.viewed_days / progressData.total_days) * 100
+                          : 0}%`
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Day-by-day log */}
+                <div>
+                  <p className="text-sm font-medium text-palette-dark mb-2">Day-by-Day Log</p>
+                  {progressData.daily_logs.length === 0 ? (
+                    <p className="text-sm text-palette-dark/60">No activity logged yet.</p>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-64 overflow-y-auto">
+                      {progressData.daily_logs.map((log) => (
+                        <div
+                          key={log.id}
+                          className={`rounded-md px-3 py-2 text-xs border ${
+                            log.status === 'VIEWED'
+                              ? 'bg-green-50 border-green-200 text-green-800'
+                              : log.status === 'MISSED'
+                              ? 'bg-red-50 border-red-200 text-red-700'
+                              : 'bg-yellow-50 border-yellow-200 text-yellow-800'
+                          }`}
+                        >
+                          <div className="font-semibold">{log.scheduled_date}</div>
+                          <div className="mt-0.5 capitalize">
+                            {log.status === 'VIEWED' ? '✅ Viewed' : log.status === 'MISSED' ? '❌ Missed' : '⏳ Pending'}
+                          </div>
+                          {log.viewed_at && (
+                            <div className="text-xs opacity-70 mt-0.5">
+                              {new Date(log.viewed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => { setShowProgressPanel(false); setProgressData(null); }}
+                className="px-6 py-2 text-sm font-medium text-palette-dark bg-palette-beige border border-palette-mauve/30 rounded-md hover:bg-palette-mauve/20"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

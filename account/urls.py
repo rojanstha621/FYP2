@@ -15,6 +15,7 @@ from .views import (
     ApprovedTherapistsListView,
     ApprovedTherapistDetailView,
     PatientDashboardView,
+    ProfilePictureDBView,
 )
 
 urlpatterns = [
@@ -24,6 +25,11 @@ urlpatterns = [
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("me/", MeView.as_view(), name="me"),
     path("change-password/", ChangePasswordView.as_view(), name="change-password"),
+    path(
+        "users/<uuid:id>/profile-picture/",
+        ProfilePictureDBView.as_view(),
+        name="profile-picture-db",
+    ),
     # Optional:
     path(
         "me/profile-update/",

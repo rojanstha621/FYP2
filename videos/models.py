@@ -168,28 +168,47 @@ class VideoAssignment(models.Model):
         help_text=_("Pause duration in seconds between segment repeats")
     )
     
+    # --- Scheduled viewing fields ---
+    schedule_start_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text=_("First date the video becomes available to the patient")
+    )
+
+    schedule_duration_days = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text=_("How many consecutive days the patient should watch this video")
+    )
+
+    scheduled_time = models.TimeField(
+        null=True,
+        blank=True,
+        help_text=_("Daily time (in HH:MM) from which the video unlocks each day")
+    )
+
     assigned_at = models.DateTimeField(
         auto_now_add=True,
         help_text=_("When the video was assigned")
     )
-    
+
     is_active = models.BooleanField(
         default=True,
         help_text=_("Whether this assignment is currently active")
     )
-    
+
     # Tracking fields
     viewed = models.BooleanField(
         default=False,
-        help_text=_("Whether the patient has viewed the video")
+        help_text=_("Whether the patient has viewed the video at least once (any day)")
     )
-    
+
     viewed_at = models.DateTimeField(
         null=True,
         blank=True,
         help_text=_("When the patient first viewed the video")
     )
-    
+
     class Meta:
         verbose_name = _("Video Assignment")
         verbose_name_plural = _("Video Assignments")
@@ -200,9 +219,47 @@ class VideoAssignment(models.Model):
             models.Index(fields=["patient", "is_active"]),
             models.Index(fields=["-assigned_at"]),
         ]
-    
+
     def __str__(self):
         return f"{self.video.title} → {self.patient.email} (by {self.therapist.email})"
+
+    @property
+    def is_scheduled(self):
+        """True if this assignment uses the daily-schedule feature."""
+        return (
+            self.schedule_start_date is not None
+            and self.schedule_duration_days is not None
+            and self.scheduled_time is not None
+        )
+
+    def get_schedule_end_date(self):
+        """Last date (inclusive) of the schedule window."""
+        if not self.is_scheduled:
+            return None
+        from datetime import timedelta
+        return self.schedule_start_date + timedelta(days=self.schedule_duration_days - 1)
+
+    def is_available_today(self):
+        """
+        Returns True if today is within the schedule window AND
+        the current time has passed the scheduled_time AND
+        the patient has NOT already watched it today.
+        For non-scheduled assignments, always returns True.
+        """
+        if not self.is_scheduled:
+            return True
+        from datetime import date, datetime
+        from django.utils import timezone
+        today = date.today()
+        end_date = self.get_schedule_end_date()
+        if today < self.schedule_start_date or today > end_date:
+            return False
+        now_time = timezone.localtime(timezone.now()).time()
+        if now_time < self.scheduled_time:
+            return False
+        # Check if already viewed today
+        already_viewed_today = self.daily_logs.filter(scheduled_date=today, viewed=True).exists()
+        return not already_viewed_today
     
     def clean(self):
         """Validate assignment constraints"""
@@ -259,8 +316,79 @@ class VideoAssignment(models.Model):
                 patient=self.patient,
                 is_active=True
             ).exists()
-            
+
             if not assignment_exists:
                 raise ValidationError(
                     _("Therapist is not assigned to this patient.")
                 )
+
+        # Validate schedule fields: all-or-nothing
+        schedule_fields = [self.schedule_start_date, self.schedule_duration_days, self.scheduled_time]
+        filled = [f for f in schedule_fields if f is not None]
+        if 0 < len(filled) < 3:
+            raise ValidationError(
+                _("Provide all three schedule fields (start date, duration, time) or leave all empty.")
+            )
+
+        if self.schedule_duration_days is not None and self.schedule_duration_days < 1:
+            raise ValidationError(
+                {"schedule_duration_days": _("Duration must be at least 1 day.")}
+            )
+
+
+class DailyVideoLog(models.Model):
+    """
+    Tracks each day's viewing status for a scheduled VideoAssignment.
+    One row is created per (assignment, date) pair when the patient views or
+    when the day passes without viewing (missed).
+    """
+
+    class DayStatus(models.TextChoices):
+        PENDING = "PENDING", _("Pending")      # Today not yet over and not yet viewed
+        VIEWED = "VIEWED", _("Viewed")          # Patient watched it that day
+        MISSED = "MISSED", _("Missed")          # Day passed without viewing
+
+    assignment = models.ForeignKey(
+        VideoAssignment,
+        on_delete=models.CASCADE,
+        related_name="daily_logs",
+        help_text=_("The video assignment this log belongs to")
+    )
+
+    scheduled_date = models.DateField(
+        help_text=_("The calendar date this log entry represents")
+    )
+
+    status = models.CharField(
+        max_length=10,
+        choices=DayStatus.choices,
+        default=DayStatus.PENDING,
+        help_text=_("Whether the patient viewed the video on this date")
+    )
+
+    viewed = models.BooleanField(
+        default=False,
+        help_text=_("Quick flag: did the patient view on this date?")
+    )
+
+    viewed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("Exact datetime when the patient viewed the video on this date")
+    )
+
+    class Meta:
+        verbose_name = _("Daily Video Log")
+        verbose_name_plural = _("Daily Video Logs")
+        unique_together = [("assignment", "scheduled_date")]
+        ordering = ["scheduled_date"]
+        indexes = [
+            models.Index(fields=["assignment", "scheduled_date"]),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.assignment.video.title} | "
+            f"{self.assignment.patient.email} | "
+            f"{self.scheduled_date} | {self.status}"
+        )

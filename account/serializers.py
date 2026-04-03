@@ -1,9 +1,25 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
+from django.urls import reverse
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import User, UserProfile
+
+
+def build_profile_picture_url(user, profile, request=None):
+    if not profile:
+        return None
+
+    if profile.profile_picture_blob:
+        path = reverse("profile-picture-db", kwargs={"id": user.id})
+        return request.build_absolute_uri(path) if request else path
+
+    if profile.profile_picture:
+        url = profile.profile_picture.url
+        return request.build_absolute_uri(url) if request else url
+
+    return None
 
 
 class LoginSerializer(serializers.Serializer):
@@ -60,6 +76,51 @@ class UserBasicSerializer(serializers.ModelSerializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    def _persist_picture_blob(self, instance, uploaded_file):
+        if not uploaded_file:
+            return
+
+        file_bytes = uploaded_file.read()
+        uploaded_file.seek(0)
+
+        instance.profile_picture_blob = file_bytes
+        instance.profile_picture_name = getattr(uploaded_file, "name", None)
+        instance.profile_picture_content_type = getattr(uploaded_file, "content_type", None)
+
+    def create(self, validated_data):
+        uploaded_file = validated_data.get("profile_picture")
+        instance = super().create(validated_data)
+        if uploaded_file:
+            self._persist_picture_blob(instance, uploaded_file)
+            instance.save(
+                update_fields=[
+                    "profile_picture_blob",
+                    "profile_picture_name",
+                    "profile_picture_content_type",
+                ]
+            )
+        return instance
+
+    def update(self, instance, validated_data):
+        uploaded_file = validated_data.get("profile_picture")
+        instance = super().update(instance, validated_data)
+        if uploaded_file:
+            self._persist_picture_blob(instance, uploaded_file)
+            instance.save(
+                update_fields=[
+                    "profile_picture_blob",
+                    "profile_picture_name",
+                    "profile_picture_content_type",
+                ]
+            )
+        return instance
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get("request") if hasattr(self, "context") else None
+        data["profile_picture"] = build_profile_picture_url(instance.user, instance, request)
+        return data
+
     class Meta:
         model = UserProfile
         fields = [
@@ -173,13 +234,8 @@ class TherapistSummarySerializer(serializers.ModelSerializer):
         profile = getattr(obj, "profile", None)
         if not profile:
             profile = UserProfile.objects.filter(user=obj).first()
-
-        if not profile or not profile.profile_picture:
-            return None
-
-        url = profile.profile_picture.url
         request = self.context.get("request")
-        return request.build_absolute_uri(url) if request else url
+        return build_profile_picture_url(obj, profile, request)
 
 class TherapistPublicDetailSerializer(serializers.ModelSerializer):
     profile = serializers.SerializerMethodField()
@@ -201,7 +257,7 @@ class TherapistPublicDetailSerializer(serializers.ModelSerializer):
         if not profile:
             from .models import UserProfile
             profile = UserProfile.objects.filter(user=obj).first()
-        return UserProfileSerializer(profile).data if profile else None
+        return UserProfileSerializer(profile, context=self.context).data if profile else None
 
 
 class AdminUserProfileSerializer(serializers.ModelSerializer):
@@ -227,6 +283,8 @@ class AdminUserListSerializer(serializers.ModelSerializer):
             "last_name",
             "phone_number",
             "role",
+            "therapist_status",
+            "is_therapist_approved",
             "is_active",
             "created_at",
             "updated_at",
@@ -246,6 +304,8 @@ class AdminUserDetailSerializer(serializers.ModelSerializer):
             "last_name",
             "phone_number",
             "role",
+            "therapist_status",
+            "is_therapist_approved",
             "is_active",
             "created_at",
             "updated_at",
@@ -257,7 +317,7 @@ class AdminUserDetailSerializer(serializers.ModelSerializer):
         profile = getattr(obj, "profile", None)
         if not profile:
             profile = UserProfile.objects.filter(user=obj).first()
-        return AdminUserProfileSerializer(profile).data if profile else None
+        return AdminUserProfileSerializer(profile, context=self.context).data if profile else None
 
 
 class AdminUserUpdateSerializer(serializers.ModelSerializer):
@@ -269,6 +329,8 @@ class AdminUserUpdateSerializer(serializers.ModelSerializer):
             "last_name",
             "phone_number",
             "role",
+            "therapist_status",
+            "is_therapist_approved",
             "is_active",
         ]
 

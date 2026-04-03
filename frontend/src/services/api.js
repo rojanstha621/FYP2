@@ -209,6 +209,10 @@ export const videoAPI = {
     apiClient.post(`/api/videos/my-videos/${id}/mark_viewed/`),
   getVideoStatistics: () =>
     apiClient.get('/api/videos/my-videos/statistics/'),
+
+  // Therapist - per-assignment schedule progress
+  getScheduleProgress: (assignmentId) =>
+    apiClient.get(`/api/videos/assignments/${assignmentId}/schedule_progress/`),
 };
 
 export default apiClient;
