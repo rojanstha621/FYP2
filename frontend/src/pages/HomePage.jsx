@@ -14,7 +14,7 @@ export const HomePage = () => {
               Physical Therapy Management
             </h1>
             <p className="text-xl text-palette-dark/70 mb-8">
-              Guided rehabilitation, exercise tracking, and progress monitoring in one platform
+              Guided rehabilitation, session tracking, and progress monitoring in one platform
             </p>
             <div className="flex gap-4 justify-center">
               <Link to="/login">
@@ -35,9 +35,9 @@ export const HomePage = () => {
             </Card>
 
             <Card>
-              <h3 className="text-2xl font-bold text-palette-mauve mb-3">Exercise Routines</h3>
+              <h3 className="text-2xl font-bold text-palette-mauve mb-3">Video Guidance</h3>
               <p className="text-palette-dark/70">
-                Follow structured exercise plans with instructional videos, timers, and step-by-step guidance.
+                Follow therapist-assigned instructional videos with structured schedules and reminders.
               </p>
             </Card>
 
@@ -53,8 +53,8 @@ export const HomePage = () => {
             <div className="bg-palette-cream rounded-lg shadow-lg p-8">
               <h3 className="text-2xl font-bold text-palette-dark mb-4">For Patients</h3>
               <ul className="space-y-3 text-palette-dark/70">
-                <li><span className="text-palette-blush">✓</span> Complete assigned exercises with video guidance</li>
-                <li><span className="text-palette-blush">✓</span> Track pain and difficulty levels during sessions</li>
+                <li><span className="text-palette-blush">✓</span> Follow assigned video schedules from your therapist</li>
+                <li><span className="text-palette-blush">✓</span> Track your recovery progress over time</li>
                 <li><span className="text-palette-blush">✓</span> View personalized progress analytics</li>
                 <li><span className="text-palette-blush">✓</span> Manage medical history and reports</li>
                 <li><span className="text-palette-blush">✓</span> Communicate with your therapist</li>
@@ -64,9 +64,9 @@ export const HomePage = () => {
             <div className="bg-palette-cream rounded-lg shadow-lg p-8">
               <h3 className="text-2xl font-bold text-palette-dark mb-4">For Therapists</h3>
               <ul className="space-y-3 text-palette-dark/70">
-                <li><span className="text-palette-blush">✓</span> Assign exercise routines to patients</li>
+                <li><span className="text-palette-blush">✓</span> Assign and manage video schedules</li>
                 <li><span className="text-palette-blush">✓</span> Review patient medical backgrounds</li>
-                <li><span className="text-palette-blush">✓</span> Monitor exercise completion and performance</li>
+                <li><span className="text-palette-blush">✓</span> Monitor patient adherence and performance</li>
                 <li><span className="text-palette-blush">✓</span> Provide feedback and adjust plans</li>
                 <li><span className="text-palette-blush">✓</span> Track patient progress analytically</li>
               </ul>
@@ -103,11 +103,11 @@ export const HomePage = () => {
           </Card>
 
           <Card>
-            <h3 className="text-xl font-bold text-palette-mauve mb-3">My Exercises</h3>
-            <p className="text-palette-dark/60 mb-4">View exercise routines and educational content</p>
-            <Link to="/exercises">
+            <h3 className="text-xl font-bold text-palette-mauve mb-3">My Videos</h3>
+            <p className="text-palette-dark/60 mb-4">View videos assigned by your therapist</p>
+            <Link to="/patient/videos">
               <Button variant="primary" className="w-full">
-                View Exercises
+                View Videos
               </Button>
             </Link>
           </Card>
@@ -139,7 +139,7 @@ export const HomePage = () => {
 
           <Card>
             <h3 className="text-xl font-bold text-palette-mauve mb-3">Assignments</h3>
-            <p className="text-palette-dark/60 mb-4">Create and manage exercise assignments</p>
+            <p className="text-palette-dark/60 mb-4">Create and manage therapist-patient assignments</p>
             <Link to="/assignments">
               <Button variant="primary" className="w-full">
                 Manage Assignments

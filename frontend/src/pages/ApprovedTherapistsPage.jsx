@@ -201,7 +201,7 @@ export default function ApprovedTherapistsPage() {
                               Requesting...
                             </span>
                           ) : (
-                            'Book Session'
+                            'Request Therapist'
                           )}
                         </button>
                       )}

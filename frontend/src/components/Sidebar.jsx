@@ -5,18 +5,13 @@ const roleLinks = {
   PATIENT: [
     { to: '/dashboard', label: 'Dashboard' },
     { to: '/therapists', label: 'Therapists' },
-    { to: '/patient/sessions', label: 'Sessions' },
-    { to: '/patient/plans', label: 'My Plans' },
-    { to: '/exercises', label: 'Exercises' },
     { to: '/patient/videos', label: 'My Videos' },
-    { to: '/patient/progress', label: 'Progress' },
     { to: '/patient/feedback', label: 'Feedback' },
     { to: '/medical-history', label: 'Medical History' },
   ],
   THERAPIST: [
     { to: '/patients', label: 'My Patients' },
     { to: '/therapist/pending-requests', label: 'Pending Requests' },
-    { to: '/therapist/exercise-plans', label: 'Exercise Plans' },
     { to: '/assignments', label: 'Assignments' },
     { to: '/therapist/videos', label: 'Videos' },
     { to: '/therapist/overview', label: 'Overview' },

@@ -181,7 +181,7 @@ export const AssignmentsPage = () => {
             {user?.role === 'ADMIN' && (
               <div className="flex gap-4">
                 <Button variant="primary" className="flex-1">
-                  Create Exercise Plan
+                  View Assignment
                 </Button>
                 {assignment.is_active && (
                   <Button 

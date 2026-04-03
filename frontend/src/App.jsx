@@ -17,18 +17,13 @@ import { ProfilePage } from './pages/ProfilePage';
 
 // Patient Pages
 import { MedicalHistoryPage } from './pages/MedicalHistoryPage';
-import ExercisesPage from './pages/ExercisesPage';
 import ApprovedTherapistsPage from './pages/ApprovedTherapistsPage';
 import TherapistDetailPage from './pages/TherapistDetailPage';
 import AdminPendingTherapistsPage from './pages/AdminPendingTherapistsPage';
 import TherapistPendingRequestsPage from './pages/TherapistPendingRequestsPage';
 import PatientDashboardPage from './pages/PatientDashboardPage';
 import PatientVideosPage from './pages/PatientVideosPage';
-import SessionsPage from './pages/patient/SessionsPage';
-import SessionDetailPage from './pages/patient/SessionDetailPage';
-import ProgressPage from './pages/patient/ProgressPage';
 import FeedbackPage from './pages/patient/FeedbackPage';
-import MyPlansPage from './pages/patient/MyPlansPage';
 
 // Therapist Pages
 import { PatientsPage } from './pages/PatientsPage';
@@ -36,7 +31,6 @@ import { AssignmentsPage } from './pages/AssignmentsPage';
 import TherapistVideosPage from './pages/TherapistVideosPage';
 import TherapistOverviewPage from './pages/therapist/TherapistOverviewPage';
 import SendFeedbackPage from './pages/therapist/SendFeedbackPage';
-import ExercisePlansPage from './pages/therapist/ExercisePlansPage';
 
 // Admin Pages
 import { AdminUsersPage } from './pages/AdminUsersPage';
@@ -121,50 +115,10 @@ function AppContent() {
               }
             />
             <Route
-              path="/exercises"
-              element={
-                <ProtectedRoute allowedRoles={["PATIENT", "THERAPIST", "ADMIN"]}>
-                  <ExercisesPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/patient/sessions"
-              element={
-                <ProtectedRoute requiredRole="PATIENT">
-                  <SessionsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/patient/sessions/:id"
-              element={
-                <ProtectedRoute requiredRole="PATIENT">
-                  <SessionDetailPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/patient/progress"
-              element={
-                <ProtectedRoute requiredRole="PATIENT">
-                  <ProgressPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/patient/feedback"
               element={
                 <ProtectedRoute requiredRole="PATIENT">
                   <FeedbackPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/patient/plans"
-              element={
-                <ProtectedRoute requiredRole="PATIENT">
-                  <MyPlansPage />
                 </ProtectedRoute>
               }
             />
@@ -218,15 +172,6 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/therapist/exercise-plans"
-              element={
-                <ProtectedRoute requiredRole="THERAPIST">
-                  <ExercisePlansPage />
-                </ProtectedRoute>
-              }
-            />
-
             {/* Admin Routes */}
             <Route
               path="/admin/users"

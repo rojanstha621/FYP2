@@ -138,24 +138,6 @@ export const adminAPI = {
   rejectTherapist: (id) => apiClient.patch(`/api/account/therapists/${id}/reject/`),
 };
 
-// Exercise API
-export const exerciseAPI = {
-  getExercises: (params) =>
-    apiClient.get('/api/exercises/exercises/', { params }),
-  getExercise: (id) =>
-    apiClient.get(`/api/exercises/exercises/${id}/`),
-  createExercise: (formData) =>
-    apiClient.post('/api/exercises/exercises/', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
-  updateExercise: (id, formData) =>
-    apiClient.patch(`/api/exercises/exercises/${id}/`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
-  deleteExercise: (id) =>
-    apiClient.delete(`/api/exercises/exercises/${id}/`),
-};
-
 // Therapist Directory API
 export const therapistAPI = {
   getApproved: (params) => apiClient.get('/api/account/therapists/approved/', { params }),

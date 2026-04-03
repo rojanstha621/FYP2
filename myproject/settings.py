@@ -58,8 +58,6 @@ INSTALLED_APPS = [
     "django_filters",
     "account",
     "medicals",
-    "exercises",
-    "sessions.apps.SessionsConfig",
     "feedback",
     "videos",
     "corsheaders",

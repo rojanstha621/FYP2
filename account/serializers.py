@@ -355,32 +355,10 @@ class TherapistInfoSerializer(serializers.Serializer):
     phone_number = serializers.CharField(max_length=15, allow_blank=True)
 
 
-class TodayExerciseSerializer(serializers.Serializer):
-    """
-    Serializer for today's assigned exercises in patient dashboard.
-    """
-    plan_id = serializers.IntegerField()
-    exercise_name = serializers.CharField(max_length=200)
-    exercise_duration = serializers.IntegerField()
-    rest_duration = serializers.IntegerField()
-    sets = serializers.IntegerField()
-    special_instructions = serializers.CharField(max_length=5000, allow_blank=True)
-    status = serializers.CharField(max_length=20)
-
-
-class TodayProgressSummarySerializer(serializers.Serializer):
-    """
-    Serializer for today's progress summary in patient dashboard.
-    """
-    total_exercises_assigned = serializers.IntegerField()
-    total_exercises_completed = serializers.IntegerField()
-    total_sets_completed = serializers.IntegerField()
-
-
 class PatientDashboardSerializer(serializers.Serializer):
     """
     Dedicated serializer for patient dashboard endpoint.
-    Returns patient info, assigned therapist, today's exercises, and progress.
+    Returns patient info and assigned therapist.
     """
     
     class PatientInfoSerializer(serializers.Serializer):
@@ -394,8 +372,6 @@ class PatientDashboardSerializer(serializers.Serializer):
 
     patient = PatientInfoSerializer(source="*")
     assigned_therapist = serializers.SerializerMethodField()
-    today_exercises = serializers.SerializerMethodField()
-    today_summary = serializers.SerializerMethodField()
 
     def get_assigned_therapist(self, obj):
         """
@@ -423,77 +399,3 @@ class PatientDashboardSerializer(serializers.Serializer):
             "email": therapist.email,
             "phone_number": therapist.phone_number or "",
         }).data
-
-    def get_today_exercises(self, obj):
-        """
-        Get exercises assigned for today.
-        Includes exercise details and completion status.
-        """
-        from django.utils import timezone
-        from exercises.models import ExercisePlan, ExerciseSession
-        
-        today = timezone.now().date()
-
-        # Get all exercise plans for today
-        plans = ExercisePlan.objects.filter(
-            patient=obj,
-            scheduled_date=today,
-            is_active=True,
-        ).select_related("exercise")
-
-        exercises_data = []
-        for plan in plans:
-            # Get the session status for this plan
-            session = ExerciseSession.objects.filter(
-                exercise_plan=plan
-            ).order_by("-created_at").first()
-            
-            status = session.status if session else "PENDING"
-
-            exercises_data.append({
-                "plan_id": plan.id,
-                "exercise_name": plan.exercise.name,
-                "exercise_duration": plan.exercise_duration,
-                "rest_duration": plan.rest_duration,
-                "sets": plan.sets,
-                "special_instructions": plan.special_instructions,
-                "status": status,
-            })
-
-        return exercises_data
-
-    def get_today_summary(self, obj):
-        """
-        Calculate today's progress summary.
-        Returns total assigned, completed, and sets completed.
-        """
-        from django.utils import timezone
-        from exercises.models import ExercisePlan, ExerciseSession
-        
-        today = timezone.now().date()
-
-        # Get all exercise plans for today
-        plans = ExercisePlan.objects.filter(
-            patient=obj,
-            scheduled_date=today,
-            is_active=True,
-        ).values_list("id", flat=True)
-
-        total_assigned = len(plans)
-        
-        # Get completed sessions for today
-        completed_sessions = ExerciseSession.objects.filter(
-            exercise_plan_id__in=plans,
-            status="COMPLETED",
-        )
-
-        total_completed = completed_sessions.count()
-        total_sets_completed = sum(
-            session.sets_completed for session in completed_sessions
-        )
-
-        return {
-            "total_exercises_assigned": total_assigned,
-            "total_exercises_completed": total_completed,
-            "total_sets_completed": total_sets_completed,
-        }

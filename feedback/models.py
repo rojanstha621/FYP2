@@ -15,13 +15,6 @@ class Feedback(models.Model):
         related_name="feedback_received",
         limit_choices_to={"role": "PATIENT"},
     )
-    session = models.ForeignKey(
-        "therapy_sessions.Session",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="feedback_entries",
-    )
     message = models.TextField()
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

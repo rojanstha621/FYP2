@@ -12,7 +12,7 @@ from .serializers import FeedbackSerializer, FeedbackCreateSerializer
 class FeedbackViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     pagination_class = StandardPagination
-    queryset = Feedback.objects.select_related("therapist", "patient", "session").all()
+    queryset = Feedback.objects.select_related("therapist", "patient").all()
 
     def get_serializer_class(self):
         if self.action == "create":
@@ -23,15 +23,15 @@ class FeedbackViewSet(viewsets.ModelViewSet):
         user = self.request.user
 
         if user.role == "ADMIN":
-            return Feedback.objects.select_related("therapist", "patient", "session").all()
+            return Feedback.objects.select_related("therapist", "patient").all()
 
         if user.role == "THERAPIST":
-            return Feedback.objects.select_related("therapist", "patient", "session").filter(
+            return Feedback.objects.select_related("therapist", "patient").filter(
                 therapist=user
             )
 
         if user.role == "PATIENT":
-            return Feedback.objects.select_related("therapist", "patient", "session").filter(
+            return Feedback.objects.select_related("therapist", "patient").filter(
                 patient=user
             )
 

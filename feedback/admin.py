@@ -9,7 +9,6 @@ class FeedbackAdmin(admin.ModelAdmin):
         "id",
         "therapist",
         "patient",
-        "session",
         "is_read",
         "created_at",
     )

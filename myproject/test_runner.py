@@ -10,10 +10,8 @@ Run all tests with coverage (if coverage is installed):
 
 Test files across apps:
     - account/tests.py
-    - exercises/tests.py
     - medicals/tests.py
     - videos/tests.py
-    - sessions/tests.py
     - feedback/tests.py
 """
 
@@ -22,10 +20,8 @@ TEST_COMMAND_COVERAGE = "coverage run manage.py test && coverage report -m"
 
 TEST_FILES = [
     "account/tests.py",
-    "exercises/tests.py",
     "medicals/tests.py",
     "videos/tests.py",
-    "sessions/tests.py",
     "feedback/tests.py",
 ]
 

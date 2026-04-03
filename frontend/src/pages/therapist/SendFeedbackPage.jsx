@@ -1,27 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Spinner } from '../../components/Spinner';
 import { getFeedback, sendFeedback } from '../../api/feedbackApi';
-import { getTherapistOverview } from '../../api/progressApi';
-import { getSessions } from '../../api/sessionsApi';
+import { assignmentAPI } from '../../services/api';
 
 export default function SendFeedbackPage() {
   const [patients, setPatients] = useState([]);
-  const [sessions, setSessions] = useState([]);
   const [feedbackItems, setFeedbackItems] = useState([]);
 
   const [patientId, setPatientId] = useState('');
-  const [sessionId, setSessionId] = useState('');
   const [message, setMessage] = useState('');
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-
-  const filteredSessions = useMemo(() => {
-    if (!patientId) return [];
-    return sessions.filter((session) => String(session.patient) === String(patientId));
-  }, [sessions, patientId]);
 
   const groupedFeedback = useMemo(() => {
     const grouped = {};
@@ -37,18 +29,31 @@ export default function SendFeedbackPage() {
     try {
       setLoading(true);
       setError('');
-      const [overviewData, sessionsData, feedbackData] = await Promise.all([
-        getTherapistOverview(),
-        getSessions(),
+      const [assignmentRes, feedbackData] = await Promise.all([
+        assignmentAPI.getAssignments(),
         getFeedback(),
       ]);
 
-      setPatients(overviewData || []);
-      setSessions(sessionsData || []);
+      const assignmentItems = assignmentRes?.data?.results || assignmentRes?.data?.result || assignmentRes?.data || [];
+      const uniquePatients = [];
+      const seenPatientIds = new Set();
+      assignmentItems.forEach((item) => {
+        const pid = String(item?.patient || item?.patient_details?.id || '');
+        if (!pid || seenPatientIds.has(pid)) return;
+        seenPatientIds.add(pid);
+        uniquePatients.push({
+          patient_id: pid,
+          patient_name:
+            `${item?.patient_details?.first_name || ''} ${item?.patient_details?.last_name || ''}`.trim() ||
+            `Patient #${pid}`,
+        });
+      });
+
+      setPatients(uniquePatients);
       setFeedbackItems(feedbackData.items || []);
 
-      if (overviewData?.length > 0) {
-        setPatientId(String(overviewData[0].patient_id));
+      if (uniquePatients.length > 0) {
+        setPatientId(String(uniquePatients[0].patient_id));
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load feedback workspace');
@@ -70,13 +75,11 @@ export default function SendFeedbackPage() {
 
       await sendFeedback({
         patient: patientId,
-        session: sessionId || null,
         message,
       });
 
       setSuccess('Feedback sent successfully');
       setMessage('');
-      setSessionId('');
       await loadData();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to send feedback');
@@ -107,7 +110,6 @@ export default function SendFeedbackPage() {
               value={patientId}
               onChange={(e) => {
                 setPatientId(e.target.value);
-                setSessionId('');
               }}
               required
               className="w-full rounded-md border border-palette-mauve/30 bg-palette-beige/30 px-3 py-2 text-palette-dark focus:outline-none focus:ring-2 focus:ring-palette-mauve"
@@ -121,21 +123,7 @@ export default function SendFeedbackPage() {
             </select>
           </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium text-palette-dark">Session (optional)</label>
-            <select
-              value={sessionId}
-              onChange={(e) => setSessionId(e.target.value)}
-              className="w-full rounded-md border border-palette-mauve/30 bg-palette-beige/30 px-3 py-2 text-palette-dark focus:outline-none focus:ring-2 focus:ring-palette-mauve"
-            >
-              <option value="">No linked session</option>
-              {filteredSessions.map((session) => (
-                <option key={session.id} value={session.id}>
-                  Session #{session.id} ({session.status})
-                </option>
-              ))}
-            </select>
-          </div>
+          <div className="hidden md:block" />
         </div>
 
         <div className="mt-4">

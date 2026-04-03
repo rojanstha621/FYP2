@@ -356,7 +356,7 @@ class ApprovedTherapistDetailView(APIView):
 class PatientDashboardView(APIView):
     """
     Patient-only endpoint for dashboard.
-    Returns patient info, assigned therapist, today's exercises, and progress summary.
+    Returns patient info and assigned therapist.
     """
     permission_classes = [IsAuthenticated, IsPatient]
 
@@ -365,7 +365,7 @@ class PatientDashboardView(APIView):
         GET /dashboard/patient/
         
         Returns dashboard data for the authenticated patient.
-        Includes assigned therapist (if any), today's exercises, and progress summary.
+        Includes assigned therapist (if any).
         """
         user = request.user
 

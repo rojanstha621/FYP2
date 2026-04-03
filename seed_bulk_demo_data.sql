@@ -9,7 +9,6 @@ BEGIN TRANSACTION;
 -- profiles for therapists/patients
 -- therapist-patient assignments
 -- patient medical histories
--- 10 exercises + 30 exercise plans
 -- 10 videos + 30 video assignments
 
 -- Password hashes (Django compatible)
@@ -176,63 +175,6 @@ SELECT
   NULL AS medical_report,
   datetime('2026-03-26 12:30:00', printf('+%d minutes', n)) AS created_at,
   datetime('2026-03-26 12:30:00', printf('+%d minutes', n)) AS updated_at
-FROM p;
-
--- 10 exercises, one created by each therapist
-WITH RECURSIVE t(n) AS (
-  SELECT 1
-  UNION ALL
-  SELECT n + 1 FROM t WHERE n < 10
-)
-INSERT OR IGNORE INTO exercises_exercise (
-  id, name, description, target_area, difficulty, video_file, youtube_url,
-  thumbnail, instructions, safety_notes, is_active, created_at, updated_at, created_by_id
-)
-SELECT
-  9100 + n AS id,
-  printf('Rehab Exercise %02d', n) AS name,
-  'Guided rehab movement drill.' AS description,
-  CASE WHEN (n % 3) = 1 THEN 'Lower Back' WHEN (n % 3) = 2 THEN 'Shoulder' ELSE 'Knee' END AS target_area,
-  CASE WHEN (n % 3) = 1 THEN 'EASY' WHEN (n % 3) = 2 THEN 'MEDIUM' ELSE 'HARD' END AS difficulty,
-  NULL AS video_file,
-  'https://www.youtube.com/watch?v=dQw4w9WgXcQ' AS youtube_url,
-  NULL AS thumbnail,
-  'Perform with controlled breathing for 3 sets.' AS instructions,
-  'Stop if discomfort increases.' AS safety_notes,
-  1 AS is_active,
-  datetime('2026-03-26 13:00:00', printf('+%d minutes', n)) AS created_at,
-  datetime('2026-03-26 13:00:00', printf('+%d minutes', n)) AS updated_at,
-  printf('%032x', 1000 + n) AS created_by_id
-FROM t;
-
--- 30 exercise plans: each patient gets therapist-specific exercise
-WITH RECURSIVE p(n) AS (
-  SELECT 1
-  UNION ALL
-  SELECT n + 1 FROM p WHERE n < 30
-)
-INSERT OR IGNORE INTO exercises_exerciseplan (
-  exercise_duration, rest_duration, sets, special_instructions,
-  assigned_date, scheduled_date, is_active, created_at, updated_at,
-  exercise_id, patient_id, therapist_id, frequency
-)
-SELECT
-  60 AS exercise_duration,
-  20 AS rest_duration,
-  3 AS sets,
-  'Maintain posture and avoid jerky movement.' AS special_instructions,
-  date('2026-03-26') AS assigned_date,
-  date('2026-03-27', printf('+%d days', n % 7)) AS scheduled_date,
-  1 AS is_active,
-  datetime('2026-03-26 14:00:00', printf('+%d minutes', n)) AS created_at,
-  datetime('2026-03-26 14:00:00', printf('+%d minutes', n)) AS updated_at,
-  9100 + (((n - 1) % 10) + 1) AS exercise_id,
-  printf('%032x', 2000 + n) AS patient_id,
-  printf('%032x', 1000 + (((n - 1) % 10) + 1)) AS therapist_id,
-  CASE WHEN (n % 4) = 1 THEN 'DAILY'
-       WHEN (n % 4) = 2 THEN 'EVERY_OTHER_DAY'
-       WHEN (n % 4) = 3 THEN 'THREE_TIMES_WEEK'
-       ELSE 'WEEKLY' END AS frequency
 FROM p;
 
 -- 10 videos created by admin

@@ -125,49 +125,7 @@ INSERT OR IGNORE INTO medicals_medicalhistory (
   '2026-03-26 10:12:00'
 );
 
--- 5) Exercise library item (created by therapist)
-INSERT OR IGNORE INTO exercises_exercise (
-  id, name, description, target_area, difficulty, video_file, youtube_url,
-  thumbnail, instructions, safety_notes, is_active, created_at, updated_at, created_by_id
-) VALUES (
-  9001,
-  'Lower Back Stretch',
-  'Gentle stretch for lumbar region and flexibility.',
-  'Lower Back',
-  'EASY',
-  NULL,
-  'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-  NULL,
-  'Hold for 20 seconds and repeat for 3 sets.',
-  'Stop if sharp pain occurs.',
-  1,
-  '2026-03-26 10:15:00',
-  '2026-03-26 10:15:00',
-  'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
-);
-
--- 6) Exercise plan assigned to patient
-INSERT OR IGNORE INTO exercises_exerciseplan (
-  exercise_duration, rest_duration, sets, special_instructions,
-  assigned_date, scheduled_date, is_active, created_at, updated_at,
-  exercise_id, patient_id, therapist_id, frequency
-) VALUES (
-  60,
-  20,
-  3,
-  'Maintain neutral spine and breathe slowly.',
-  '2026-03-26',
-  '2026-03-27',
-  1,
-  '2026-03-26 10:18:00',
-  '2026-03-26 10:18:00',
-  9001,
-  'cccccccccccccccccccccccccccccccc',
-  'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
-  'DAILY'
-);
-
--- 7) Admin-managed educational video
+-- 5) Admin-managed educational video
 INSERT OR IGNORE INTO videos_video (
   id, title, description, youtube_url, youtube_embed_url, thumbnail_url,
   is_active, created_at, updated_at, created_by_id
@@ -184,7 +142,7 @@ INSERT OR IGNORE INTO videos_video (
   'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
 );
 
--- 8) Therapist assigns video to patient
+-- 6) Therapist assigns video to patient
 INSERT OR IGNORE INTO videos_videoassignment (
   video_id, therapist_id, patient_id, notes,
   assigned_at, is_active, viewed, viewed_at

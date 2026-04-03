@@ -194,7 +194,7 @@ export default function TherapistPendingRequestsPage() {
               </h3>
               <p className="text-palette-dark/70 mb-6">
                 {confirmAction.type === 'approve' 
-                  ? `Are you sure you want to accept ${confirmAction.patientName} as your patient? You will be able to assign exercises and track their progress.`
+                  ? `Are you sure you want to accept ${confirmAction.patientName} as your patient? You will be able to manage their video program and track their progress.`
                   : `Are you sure you want to reject the request from ${confirmAction.patientName}? This action cannot be undone.`
                 }
               </p>

@@ -3,9 +3,7 @@ from rest_framework.test import APITestCase, APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from account.models import User
-from exercises.models import Exercise, ExercisePlan
 from medicals.models import TherapistPatientAssignment
-from sessions.models import Session
 
 from .models import Feedback
 
@@ -49,33 +47,6 @@ class FeedbackAPITestCase(APITestCase):
             is_staff=True,
         )
 
-        self.exercise = Exercise.objects.create(
-            name="Ankle Stretch",
-            description="Stretching routine",
-            target_area="Ankle",
-            difficulty="EASY",
-            youtube_url="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-            created_by=self.therapist,
-            is_active=True,
-        )
-
-        self.plan = ExercisePlan.objects.create(
-            patient=self.patient,
-            therapist=self.therapist,
-            exercise=self.exercise,
-            exercise_duration=60,
-            rest_duration=15,
-            sets=3,
-            scheduled_date="2026-03-26",
-            is_active=True,
-        )
-
-        self.session = Session.objects.create(
-            patient=self.patient,
-            exercise_plan=self.plan,
-            status="in_progress",
-        )
-
         TherapistPatientAssignment.objects.create(
             therapist=self.therapist,
             patient=self.patient,
@@ -93,7 +64,6 @@ class FeedbackAPITestCase(APITestCase):
             "/api/feedback/feedback/",
             {
                 "patient": str(self.patient.id),
-                "session": self.session.id,
                 "message": "Great effort today.",
             },
             format="json",
@@ -109,7 +79,6 @@ class FeedbackAPITestCase(APITestCase):
         Feedback.objects.create(
             therapist=self.therapist,
             patient=self.patient,
-            session=self.session,
             message="Keep your posture steady.",
         )
 
@@ -124,7 +93,6 @@ class FeedbackAPITestCase(APITestCase):
         feedback = Feedback.objects.create(
             therapist=self.therapist,
             patient=self.patient,
-            session=self.session,
             message="Good progress.",
             is_read=False,
         )
@@ -140,14 +108,12 @@ class FeedbackAPITestCase(APITestCase):
         Feedback.objects.create(
             therapist=self.therapist,
             patient=self.patient,
-            session=self.session,
             message="Msg 1",
             is_read=False,
         )
         Feedback.objects.create(
             therapist=self.therapist,
             patient=self.patient,
-            session=self.session,
             message="Msg 2",
             is_read=False,
         )
