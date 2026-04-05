@@ -101,6 +101,27 @@ function extractYouTubeVideoIdFromEmbedUrl(embedUrl = '') {
   return null;
 }
 
+function formatDifficultyLabel(level) {
+  if (!level) return null;
+  const map = {
+    EASY: 'Easy',
+    MEDIUM: 'Medium',
+    DIFFICULT: 'Difficult',
+    HARD: 'Hard',
+  };
+  return map[level] || level;
+}
+
+function getLatestDifficultyLog(logs = []) {
+  const difficultyLogs = logs.filter((log) => !!log.difficulty_level);
+  if (difficultyLogs.length === 0) return null;
+
+  return difficultyLogs.sort((a, b) => {
+    if (a.scheduled_date === b.scheduled_date) return 0;
+    return a.scheduled_date > b.scheduled_date ? -1 : 1;
+  })[0];
+}
+
 export default function TherapistVideosPage() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
@@ -739,6 +760,10 @@ export default function TherapistVideosPage() {
                         : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
+                      {(() => {
+                        const latestDifficulty = getLatestDifficultyLog(assignment.daily_logs || []);
+                        return (
+                          <>
                       {assignment.is_scheduled ? (
                         <div className="space-y-1">
                           <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
@@ -756,18 +781,33 @@ export default function TherapistVideosPage() {
                               {assignment.schedule_duration_days} days done
                             </div>
                           )}
+                          {latestDifficulty && (
+                            <div className="text-xs text-palette-dark/80">
+                              Latest difficulty: <span className="font-semibold">{formatDifficultyLabel(latestDifficulty.difficulty_level)}</span>
+                            </div>
+                          )}
                         </div>
                       ) : (
-                        <span
-                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            assignment.viewed
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-yellow-100 text-yellow-800'
-                          }`}
-                        >
-                          {assignment.viewed ? 'Viewed' : 'Pending'}
-                        </span>
+                        <div className="space-y-1">
+                          <span
+                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              assignment.viewed
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-yellow-100 text-yellow-800'
+                            }`}
+                          >
+                            {assignment.viewed ? 'Viewed' : 'Pending'}
+                          </span>
+                          {latestDifficulty && (
+                            <div className="text-xs text-palette-dark/80">
+                              Latest difficulty: <span className="font-semibold">{formatDifficultyLabel(latestDifficulty.difficulty_level)}</span>
+                            </div>
+                          )}
+                        </div>
                       )}
+                          </>
+                        );
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-palette-dark/60">
                       {new Date(assignment.assigned_at).toLocaleDateString()}
@@ -1150,6 +1190,11 @@ export default function TherapistVideosPage() {
                           {log.viewed_at && (
                             <div className="text-xs opacity-70 mt-0.5">
                               {new Date(log.viewed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          )}
+                          {log.difficulty_level && (
+                            <div className="text-xs opacity-80 mt-0.5">
+                              Difficulty: {formatDifficultyLabel(log.difficulty_level)}
                             </div>
                           )}
                         </div>

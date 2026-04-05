@@ -84,7 +84,7 @@ class DailyVideoLogSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DailyVideoLog
-        fields = ["id", "scheduled_date", "status", "viewed", "viewed_at"]
+        fields = ["id", "scheduled_date", "status", "viewed", "viewed_at", "difficulty_level"]
         read_only_fields = fields
 
 
@@ -455,10 +455,8 @@ class PatientVideoSerializer(serializers.ModelSerializer):
         return obj.is_available_today()
 
     def get_today_log(self, obj):
-        from datetime import date
-        if not obj.is_scheduled:
-            return None
-        today = date.today()
+        from django.utils import timezone
+        today = timezone.localdate()
         log = obj.daily_logs.filter(scheduled_date=today).first()
         if log:
             return DailyVideoLogSerializer(log).data

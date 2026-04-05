@@ -248,9 +248,8 @@ class VideoAssignment(models.Model):
         """
         if not self.is_scheduled:
             return True
-        from datetime import date, datetime
         from django.utils import timezone
-        today = date.today()
+        today = timezone.localdate()
         end_date = self.get_schedule_end_date()
         if today < self.schedule_start_date or today > end_date:
             return False
@@ -348,6 +347,12 @@ class DailyVideoLog(models.Model):
         VIEWED = "VIEWED", _("Viewed")          # Patient watched it that day
         MISSED = "MISSED", _("Missed")          # Day passed without viewing
 
+    class DifficultyLevel(models.TextChoices):
+        EASY = "EASY", _("Easy")
+        MEDIUM = "MEDIUM", _("Medium")
+        DIFFICULT = "DIFFICULT", _("Difficult")
+        HARD = "HARD", _("Hard")
+
     assignment = models.ForeignKey(
         VideoAssignment,
         on_delete=models.CASCADE,
@@ -375,6 +380,14 @@ class DailyVideoLog(models.Model):
         null=True,
         blank=True,
         help_text=_("Exact datetime when the patient viewed the video on this date")
+    )
+
+    difficulty_level = models.CharField(
+        max_length=10,
+        choices=DifficultyLevel.choices,
+        null=True,
+        blank=True,
+        help_text=_("Patient-reported difficulty level for this day")
     )
 
     class Meta:

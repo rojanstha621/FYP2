@@ -189,6 +189,8 @@ export const videoAPI = {
     apiClient.get(`/api/videos/my-videos/${id}/`),
   markVideoViewed: (id) =>
     apiClient.post(`/api/videos/my-videos/${id}/mark_viewed/`),
+  logVideoDifficulty: (id, data) =>
+    apiClient.post(`/api/videos/my-videos/${id}/log_difficulty/`, data),
   getVideoStatistics: () =>
     apiClient.get('/api/videos/my-videos/statistics/'),
 

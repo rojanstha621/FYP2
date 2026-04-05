@@ -67,6 +67,17 @@ function getScheduleStatus(assignment) {
   return { type: 'available', label: 'Available now 🎬', color: 'bg-palette-mauve/20 text-palette-mauve' };
 }
 
+function formatDifficultyLabel(level) {
+  if (!level) return null;
+  const map = {
+    EASY: 'Easy',
+    MEDIUM: 'Medium',
+    DIFFICULT: 'Difficult',
+    HARD: 'Hard',
+  };
+  return map[level] || level;
+}
+
 export default function PatientVideosPage() {
   useAuth();
   const [videos, setVideos] = useState([]);
@@ -82,6 +93,7 @@ export default function PatientVideosPage() {
   // Modal
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState(null);
+  const [difficultyLoading, setDifficultyLoading] = useState(false);
 
   // Countdown tick — re-render every 30s so countdowns stay fresh
   const [, setTick] = useState(0);
@@ -110,8 +122,10 @@ export default function PatientVideosPage() {
 
       setVideos(videoList);
       setError(null);
+      return videoList;
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch videos');
+      return [];
     } finally {
       setLoading(false);
     }
@@ -164,12 +178,37 @@ export default function PatientVideosPage() {
         setError(res.data?.message || 'Could not mark as viewed');
         return;
       }
-      setSuccess('Video marked as viewed for today!');
-      setShowDetailModal(false);
-      fetchVideos();
+      setSuccess('Video marked as viewed for today. Please choose today\'s difficulty level.');
+      const refreshedVideos = await fetchVideos();
+      const updated = refreshedVideos.find((v) => v.id === selectedVideo.id);
+      if (updated) {
+        setSelectedVideo(updated);
+      }
       fetchStatistics();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to mark video as viewed');
+    }
+  };
+
+  const handleLogDifficulty = async (difficultyLevel) => {
+    if (!selectedVideo) return;
+    try {
+      setDifficultyLoading(true);
+      await videoAPI.logVideoDifficulty(selectedVideo.id, {
+        difficulty_level: difficultyLevel,
+      });
+
+      setSuccess(`Today's difficulty saved as ${formatDifficultyLabel(difficultyLevel)}.`);
+      const refreshedVideos = await fetchVideos();
+      const updated = refreshedVideos.find((v) => v.id === selectedVideo.id);
+      if (updated) {
+        setSelectedVideo(updated);
+      }
+      fetchStatistics();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to save difficulty level');
+    } finally {
+      setDifficultyLoading(false);
     }
   };
 
@@ -389,6 +428,14 @@ export default function PatientVideosPage() {
                           </span>
                         </div>
                       )}
+                      {assignment.today_log?.difficulty_level && (
+                        <div className="text-xs text-palette-dark/80 mt-1">
+                          Difficulty today:{' '}
+                          <span className="font-semibold text-palette-dark">
+                            {formatDifficultyLabel(assignment.today_log.difficulty_level)}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -511,6 +558,42 @@ export default function PatientVideosPage() {
                     {!selectedVideo.is_available_today && (
                       <p className="text-xs text-yellow-700 mt-1">
                         You can still play this video now, but it can be marked as watched only during the daily unlock window.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {(selectedVideo.today_log?.viewed || (!selectedVideo.is_scheduled && selectedVideo.viewed)) && (
+                  <div className="mt-3 p-3 bg-palette-cream border-l-4 border-green-500">
+                    <p className="text-sm font-medium text-palette-dark mb-2">Difficulty Level Today</p>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { label: 'Easy', value: 'EASY' },
+                        { label: 'Medium', value: 'MEDIUM' },
+                        { label: 'Difficult', value: 'DIFFICULT' },
+                        { label: 'Hard', value: 'HARD' },
+                      ].map((item) => {
+                        const isActive = selectedVideo.today_log?.difficulty_level === item.value;
+                        return (
+                          <button
+                            key={item.value}
+                            type="button"
+                            disabled={difficultyLoading}
+                            onClick={() => handleLogDifficulty(item.value)}
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-full border transition-colors ${
+                              isActive
+                                ? 'bg-palette-mauve text-white border-palette-mauve'
+                                : 'bg-white text-palette-dark border-palette-mauve/40 hover:bg-palette-beige'
+                            } ${difficultyLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                          >
+                            {item.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {selectedVideo.today_log?.difficulty_level && (
+                      <p className="text-xs text-palette-dark/70 mt-2">
+                        Saved today: {formatDifficultyLabel(selectedVideo.today_log.difficulty_level)}
                       </p>
                     )}
                   </div>

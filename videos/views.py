@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
-from datetime import date, timedelta
+from datetime import timedelta
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from myproject.pagination import StandardPagination
@@ -221,7 +221,7 @@ def _backfill_missed_days(assignment):
     """
     if not assignment.is_scheduled:
         return
-    today = date.today()
+    today = timezone.localdate()
     current = assignment.schedule_start_date
     end = assignment.get_schedule_end_date()
     while current < today and current <= end:
@@ -282,7 +282,7 @@ class PatientVideoViewSet(viewsets.ReadOnlyModelViewSet):
         """
         assignment = self.get_object()
         now = timezone.now()
-        today = date.today()
+        today = timezone.localdate()
 
         if assignment.is_scheduled:
             # Guard: check availability
@@ -339,10 +339,92 @@ class PatientVideoViewSet(viewsets.ReadOnlyModelViewSet):
                 assignment.viewed_at = now
                 assignment.save(update_fields=["viewed", "viewed_at"])
 
+            # Keep a per-day log for non-scheduled assignments as well so
+            # patients can submit a difficulty level for today.
+            log, _ = DailyVideoLog.objects.get_or_create(
+                assignment=assignment,
+                scheduled_date=today,
+                defaults={
+                    "status": DailyVideoLog.DayStatus.VIEWED,
+                    "viewed": True,
+                    "viewed_at": now,
+                },
+            )
+            if not log.viewed:
+                log.viewed = True
+                log.status = DailyVideoLog.DayStatus.VIEWED
+                log.viewed_at = now
+                log.save(update_fields=["viewed", "status", "viewed_at"])
+
         serializer = self.get_serializer(assignment)
         return api_response(
             data={"assignment": serializer.data},
             message="Video marked as viewed.",
+            status_code=status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=["post"])
+    def log_difficulty(self, request, pk=None):
+        """
+        Log today's perceived difficulty level for an assignment.
+
+        Patient must watch the video first for the same day.
+        """
+        assignment = self.get_object()
+        today = timezone.localdate()
+        now = timezone.now()
+
+        difficulty_level = str(request.data.get("difficulty_level", "")).upper()
+        valid_choices = {choice[0] for choice in DailyVideoLog.DifficultyLevel.choices}
+
+        if difficulty_level not in valid_choices:
+            return api_response(
+                data={},
+                message="Invalid difficulty level. Choose EASY, MEDIUM, DIFFICULT, or HARD.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        log = assignment.daily_logs.filter(scheduled_date=today).first()
+
+        if log is None:
+            if assignment.is_scheduled:
+                return api_response(
+                    data={},
+                    message="Please mark this video as watched today before logging difficulty.",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if not assignment.viewed:
+                return api_response(
+                    data={},
+                    message="Please watch this video before logging difficulty.",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+
+            log = DailyVideoLog.objects.create(
+                assignment=assignment,
+                scheduled_date=today,
+                status=DailyVideoLog.DayStatus.VIEWED,
+                viewed=True,
+                viewed_at=assignment.viewed_at or now,
+            )
+
+        if not log.viewed:
+            return api_response(
+                data={},
+                message="Please mark this video as watched today before logging difficulty.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        log.difficulty_level = difficulty_level
+        log.save(update_fields=["difficulty_level"])
+
+        return api_response(
+            data={
+                "today_log": DailyVideoLogSerializer(log).data,
+                "assignment_id": assignment.id,
+            },
+            message="Difficulty logged successfully.",
             status_code=status.HTTP_200_OK,
         )
 
