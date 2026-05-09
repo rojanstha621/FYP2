@@ -12,6 +12,7 @@ class User(AbstractUser):
         ADMIN = "ADMIN", _("Admin")
         PARENT = "PATIENT", _("Patient")
         BABYSITTER = "THERAPIST", _("Therapist")
+        NURSE = "NURSE", _("Nurse")
 
     class TherapistStatusChoices(models.TextChoices):
         PENDING = "PENDING", _("Pending")

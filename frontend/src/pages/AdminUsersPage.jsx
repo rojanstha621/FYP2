@@ -114,6 +114,7 @@ export const AdminUsersPage = () => {
               <option value="ADMIN">Admin</option>
               <option value="PATIENT">Patient</option>
               <option value="THERAPIST">Therapist</option>
+              <option value="NURSE">Nurse</option>
             </Select>
           </div>
           <div>
@@ -147,6 +148,7 @@ export const AdminUsersPage = () => {
                   <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                     user.role === 'ADMIN' ? 'bg-palette-blush text-palette-dark' :
                     user.role === 'THERAPIST' ? 'bg-palette-cream text-palette-dark' :
+                    user.role === 'NURSE' ? 'bg-sky-100 text-sky-800' :
                     'bg-palette-cream text-palette-dark'
                   }`}>
                     {user.role}
@@ -236,6 +238,7 @@ export const AdminUsersPage = () => {
                   <option value="ADMIN">Admin</option>
                   <option value="PATIENT">Patient</option>
                   <option value="THERAPIST">Therapist</option>
+                  <option value="NURSE">Nurse</option>
                 </Select>
               </div>
 

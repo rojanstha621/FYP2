@@ -3,6 +3,8 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     MedicalHistoryViewSet,
     TherapistPatientAssignmentViewSet,
+    NursePatientAssignmentViewSet,
+    AppointmentViewSet,
     PatientDashboardView,
     AssignmentRequestView,
     PendingAssignmentsView,
@@ -15,6 +17,8 @@ router.register(r"medical-history", MedicalHistoryViewSet, basename="medical-his
 router.register(
     r"assignments", TherapistPatientAssignmentViewSet, basename="assignment"
 )
+router.register(r"nurse-assignments", NursePatientAssignmentViewSet, basename="nurse-assignment")
+router.register(r"appointments", AppointmentViewSet, basename="appointment")
 
 app_name = "medicals"
 

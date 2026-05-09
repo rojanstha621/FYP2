@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { adminAPI } from '../services/api';
 import { Card, Button } from '../components/FormElements';
 import { Spinner } from '../components/Spinner';
+import { Alert } from '../components/Alert';
 
 export const AdminDashboardPage = () => {
   const [stats, setStats] = useState(null);
@@ -51,17 +52,26 @@ export const AdminDashboardPage = () => {
 
   if (error) {
     return (
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <p className="text-red-600">{error}</p>
+      <div className="max-w-6xl mx-auto px-4 py-8 animate-fade-in-up">
+        <Alert type="error" message={error} onClose={() => setError('')} />
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold text-palette-dark mb-8">Admin Dashboard</h1>
+    <div className="max-w-6xl mx-auto px-4 py-8 space-y-8 animate-fade-in-up">
+      <div className="glass-panel rounded-[2rem] p-6 md:p-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.24em] text-palette-dark/50">Admin dashboard</p>
+          <h1 className="mt-2 text-4xl md:text-5xl font-bold text-palette-dark">System overview</h1>
+          <p className="mt-2 text-palette-dark/70">Monitor users, roles, and the overall platform health.</p>
+        </div>
+        <div className="glass-panel-strong rounded-3xl px-4 py-3 text-sm text-palette-dark/70">
+          Live counts are fetched from the API on load.
+        </div>
+      </div>
 
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
+      <div className="grid gap-6 md:grid-cols-3">
         <Card>
           <h3 className="text-palette-dark/70 text-sm font-semibold mb-2">Total Users</h3>
           <p className="text-4xl font-bold text-palette-mauve">{stats.totalUsers}</p>
@@ -78,7 +88,7 @@ export const AdminDashboardPage = () => {
         </Card>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid gap-6 md:grid-cols-3">
         <Card>
           <h3 className="text-lg font-bold text-palette-dark mb-2">Patients</h3>
           <p className="text-3xl font-bold text-palette-mauve mb-4">{stats.patients}</p>
@@ -104,7 +114,7 @@ export const AdminDashboardPage = () => {
         </Card>
       </div>
 
-      <Card className="mt-8">
+      <Card>
         <h2 className="text-2xl font-bold text-palette-dark mb-6">System Information</h2>
         <div className="space-y-4">
           <div className="flex justify-between py-3 border-b border-palette-cream/30">

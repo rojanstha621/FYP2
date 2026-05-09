@@ -36,7 +36,7 @@ export const LoginPage = () => {
       <div className="w-full max-w-md">
         <div className="bg-palette-cream rounded-lg shadow-lg p-8">
           <div className="flex justify-center mb-8">
-            <img src={logo} alt="PT Manager Logo" className="h-12 w-auto" />
+            <img src={logo} alt="HealMe Logo" className="h-12 w-auto" />
           </div>
 
           <h2 className="text-2xl font-bold text-palette-dark mb-6 text-center">Login</h2>
@@ -99,6 +99,7 @@ export const LoginPage = () => {
             <p className="text-sm text-palette-dark/60 font-semibold mb-2">Demo Credentials:</p>
             <p className="text-sm text-palette-dark/60">Patient: patient@example.com / password</p>
             <p className="text-sm text-palette-dark/60">Therapist: therapist@example.com / password</p>
+            <p className="text-sm text-palette-dark/60">Nurse: nurse@example.com / password</p>
             <p className="text-sm text-palette-dark/60">Admin: admin@example.com / password</p>
           </div> */}
         </div>

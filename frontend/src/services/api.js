@@ -87,6 +87,7 @@ export const authAPI = {
   // Patient dashboard
   getPatientDashboard: () =>
     apiClient.get('/api/account/dashboard/patient/'),
+  getCareTeamDirectory: () => apiClient.get('/api/account/care-team/'),
 };
 
 // Medical History API
@@ -101,6 +102,21 @@ export const medicalAPI = {
     apiClient.patch(`/api/medicals/medical-history/${id}/`, data),
   deleteMedicalHistory: (id) =>
     apiClient.delete(`/api/medicals/medical-history/${id}/`),
+};
+
+export const nurseAPI = {
+  getDirectory: () => apiClient.get('/api/account/care-team/'),
+  // Nurse-patient assignments
+  getAssignments: () => apiClient.get('/api/medicals/nurse-assignments/'),
+  createAssignment: (data) => apiClient.post('/api/medicals/nurse-assignments/', data),
+  updateAssignment: (id, data) => apiClient.patch(`/api/medicals/nurse-assignments/${id}/`, data),
+  deactivateAssignment: (id) => apiClient.delete(`/api/medicals/nurse-assignments/${id}/`),
+
+  // Appointments
+  getAppointments: () => apiClient.get('/api/medicals/appointments/'),
+  createAppointment: (data) => apiClient.post('/api/medicals/appointments/', data),
+  updateAppointment: (id, data) => apiClient.patch(`/api/medicals/appointments/${id}/`, data),
+  cancelAppointment: (id) => apiClient.delete(`/api/medicals/appointments/${id}/`),
 };
 
 // Therapist-Patient Assignment API

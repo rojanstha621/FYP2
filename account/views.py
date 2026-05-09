@@ -27,7 +27,7 @@ from .serializers import (
     PatientDashboardSerializer,
 )
 from .permissions import IsAdminRole
-from account.permissions import IsPatient
+from account.permissions import IsPatient, IsNurseOrAdmin
 
 from .models import User
 
@@ -309,8 +309,8 @@ class RejectTherapistView(APIView):
 
 
 class ApprovedTherapistsListView(generics.ListAPIView):
-    """List all approved therapists; restricted to patients"""
-    permission_classes = [IsAuthenticated, IsPatient]
+    """List all approved therapists; accessible to patients, nurses, and admins"""
+    permission_classes = [IsAuthenticated]
     serializer_class = TherapistSummarySerializer
     pagination_class = None
 
@@ -320,6 +320,16 @@ class ApprovedTherapistsListView(generics.ListAPIView):
             role="THERAPIST",
             therapist_status=User.TherapistStatusChoices.APPROVED,
         ).order_by("first_name", "last_name")
+
+    def get(self, request, *args, **kwargs):
+        if request.user.role not in {"PATIENT", "NURSE", "ADMIN"}:
+            return APIResponse.send(
+                is_success=False,
+                message="You do not have permission to view therapists",
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+
+        return super().get(request, *args, **kwargs)
 
 
 class ApprovedTherapistDetailView(APIView):
@@ -376,5 +386,34 @@ class PatientDashboardView(APIView):
             is_success=True,
             message="Patient dashboard retrieved",
             result=serializer.data,
+            status_code=status.HTTP_200_OK,
+        )
+
+
+class CareTeamDirectoryView(APIView):
+    """Nurses and admins can fetch patients and approved therapists from one endpoint."""
+
+    permission_classes = [IsAuthenticated, IsNurseOrAdmin]
+
+    def get(self, request):
+        from .models import User
+
+        nurses = User.objects.filter(role="NURSE").order_by("first_name", "last_name")
+        patients = User.objects.filter(role="PATIENT").order_by("first_name", "last_name")
+        therapists = User.objects.filter(
+            role="THERAPIST",
+            therapist_status=User.TherapistStatusChoices.APPROVED,
+        ).order_by("first_name", "last_name")
+
+        payload = {
+            "nurses": UserBasicSerializer(nurses, many=True).data,
+            "patients": UserBasicSerializer(patients, many=True).data,
+            "therapists": AdminUserListSerializer(therapists, many=True).data,
+        }
+
+        return APIResponse.send(
+            is_success=True,
+            message="Care team directory retrieved",
+            result=payload,
             status_code=status.HTTP_200_OK,
         )

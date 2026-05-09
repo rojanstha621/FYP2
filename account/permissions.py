@@ -30,3 +30,19 @@ class IsTherapistApproved(BasePermission):
             and getattr(user, "role", None) == "THERAPIST"
             and getattr(user, "is_approved_therapist", False)
         )
+
+
+class IsNurse(BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(user and user.is_authenticated and getattr(user, "role", None) == "NURSE")
+
+
+class IsNurseOrAdmin(BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(
+            user
+            and user.is_authenticated
+            and getattr(user, "role", None) in {"NURSE", "ADMIN"}
+        )

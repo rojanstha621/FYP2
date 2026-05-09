@@ -17,10 +17,16 @@ const roleLinks = {
     { to: '/therapist/overview', label: 'Overview' },
     { to: '/therapist/feedback', label: 'Feedback' },
   ],
+  NURSE: [
+    { to: '/nurse/dashboard', label: 'Dashboard' },
+    { to: '/nurse/patients', label: 'Patients & Histories' },
+    { to: '/nurse/appointments', label: 'Appointments' },
+  ],
   ADMIN: [
     { to: '/admin/dashboard', label: 'Dashboard' },
     { to: '/admin/users', label: 'Users' },
     { to: '/admin/pending-therapists', label: 'Pending Therapists' },
+    { to: '/nurse/dashboard', label: 'Nurse Management' },
     { to: '/admin/videos', label: 'Videos' },
     { to: '/admin/medical-histories', label: 'Medical Histories' },
     { to: '/admin/pending-assignments', label: 'Pending Assignments' },
@@ -36,12 +42,17 @@ export const Sidebar = () => {
   const links = roleLinks[user.role] || [];
 
   return (
-    <aside className="hidden md:block w-64 shrink-0 border-r border-palette-mauve/20 bg-palette-cream/80">
-      <div className="sticky top-0 h-[calc(100vh-5rem)] overflow-y-auto p-4">
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-palette-dark/60">
+    <aside className="hidden md:block w-72 shrink-0 px-4 py-4">
+      <div className="sticky top-4 h-[calc(100vh-2rem)] overflow-y-auto rounded-[2rem] glass-panel-strong p-4 lg:p-5">
+        <div className="mb-6 rounded-2xl bg-gradient-to-br from-palette-dark to-[#5c4745] px-4 py-4 text-white shadow-lg shadow-palette-dark/20">
+          <p className="text-xs uppercase tracking-[0.22em] text-white/70">Workspace</p>
+          <p className="mt-2 text-lg font-semibold">{user?.role} Portal</p>
+        </div>
+
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.22em] text-palette-dark/55">
           Navigation
         </h2>
-        <nav className="space-y-1">
+        <nav className="space-y-2">
           {links.map((link) => {
             const isActive =
               location.pathname === link.to ||
@@ -51,10 +62,10 @@ export const Sidebar = () => {
               <Link
                 key={link.to}
                 to={link.to}
-                className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                className={`block rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-300 ${
                   isActive
-                    ? 'bg-palette-mauve text-white'
-                    : 'text-palette-dark hover:bg-palette-beige'
+                    ? 'bg-gradient-to-r from-palette-mauve to-[#6f4c60] text-white shadow-lg shadow-palette-mauve/25 translate-x-1'
+                    : 'text-palette-dark/70 hover:bg-white/70 hover:text-palette-dark'
                 }`}
               >
                 {link.label}

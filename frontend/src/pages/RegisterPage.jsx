@@ -63,7 +63,7 @@ export const RegisterPage = () => {
       <div className="w-full max-w-md">
         <div className="bg-palette-cream rounded-lg shadow-lg p-8">
           <div className="flex justify-center mb-8">
-            <img src={logo} alt="PT Manager Logo" className="h-12 w-auto" />
+            <img src={logo} alt="HealMe Logo" className="h-12 w-auto" />
           </div>
 
           <h2 className="text-2xl font-bold text-palette-dark mb-6 text-center">Create Account</h2>
@@ -122,6 +122,7 @@ export const RegisterPage = () => {
             >
               <option value="PATIENT">Patient</option>
               <option value="THERAPIST">Therapist</option>
+              <option value="NURSE">Nurse</option>
             </Select>
 
             <div className="mb-4">

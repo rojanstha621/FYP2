@@ -32,6 +32,11 @@ import TherapistVideosPage from './pages/TherapistVideosPage';
 import TherapistOverviewPage from './pages/therapist/TherapistOverviewPage';
 import SendFeedbackPage from './pages/therapist/SendFeedbackPage';
 
+// Nurse Pages
+import { NurseDashboardPage } from './pages/NurseDashboardPage';
+import { NursePatientsPage } from './pages/NursePatientsPage';
+import { NurseAppointmentsPage } from './pages/NurseAppointmentsPage';
+
 // Admin Pages
 import { AdminUsersPage } from './pages/AdminUsersPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
@@ -172,6 +177,33 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
+
+            {/* Nurse Routes */}
+            <Route
+              path="/nurse/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={["NURSE", "ADMIN"]}>
+                  <NurseDashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/nurse/patients"
+              element={
+                <ProtectedRoute allowedRoles={["NURSE", "ADMIN"]}>
+                  <NursePatientsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/nurse/appointments"
+              element={
+                <ProtectedRoute allowedRoles={["NURSE", "ADMIN"]}>
+                  <NurseAppointmentsPage />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Admin Routes */}
             <Route
               path="/admin/users"

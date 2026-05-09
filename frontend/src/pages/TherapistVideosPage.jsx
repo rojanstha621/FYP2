@@ -188,10 +188,6 @@ export default function TherapistVideosPage() {
       return;
     }
 
-    let cancelled = false;
-    let probePlayer = null;
-    let probeElement = null;
-
     const cleanupProbe = () => {
       if (probePlayer?.destroy) {
         probePlayer.destroy();
@@ -562,11 +558,19 @@ export default function TherapistVideosPage() {
   }, [selectedVideo?.youtube_embed_url, sliderStartValue, sliderEndValue]);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-palette-dark">Video Library</h1>
-        <p className="text-palette-dark/70 mt-2">Browse educational videos and assign them to your patients</p>
-      </div>
+    <div className="max-w-7xl mx-auto px-4 py-8 space-y-6 animate-fade-in-up">
+      <section className="glass-panel rounded-[2rem] p-6 md:p-8">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-palette-dark/50">Therapist workspace</p>
+            <h1 className="mt-2 text-4xl md:text-5xl font-bold text-palette-dark">Video Library</h1>
+            <p className="mt-2 text-palette-dark/70 max-w-2xl">Browse educational videos and assign them to your patients.</p>
+          </div>
+          <div className="glass-panel-strong rounded-3xl px-4 py-3 text-sm text-palette-dark/70">
+            Assign sessions, track progress, and review patient adherence from one screen.
+          </div>
+        </div>
+      </section>
 
       {/* Alerts */}
       {error && (
@@ -578,7 +582,7 @@ export default function TherapistVideosPage() {
 
       {/* Tabs */}
       <div className="mb-6">
-        <div className="border-b border-palette-mauve/30">
+        <div className="rounded-2xl border border-white/60 bg-white/70 px-4 pt-3 shadow-sm backdrop-blur-xl">
           <nav className="-mb-px flex space-x-8">
             <button
               onClick={() => setActiveTab('browse')}
@@ -605,7 +609,7 @@ export default function TherapistVideosPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-palette-cream p-4 rounded-lg shadow-sm mb-6">
+      <div className="glass-panel p-4 rounded-3xl mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {activeTab === 'browse' ? (
             <div>
@@ -1103,7 +1107,7 @@ export default function TherapistVideosPage() {
       {/* Schedule Progress Modal */}
       {showProgressPanel && (
         <div className="fixed inset-0 bg-palette-dark/50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border border-palette-mauve/20 w-full max-w-2xl shadow-lg rounded-md bg-palette-cream">
+          <div className="relative top-20 mx-auto p-5 border border-white/60 w-full max-w-2xl shadow-2xl rounded-3xl bg-white/90 backdrop-blur-xl">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium text-palette-dark flex items-center gap-2">
                 <FiBarChart2 /> Schedule Progress
@@ -1119,7 +1123,7 @@ export default function TherapistVideosPage() {
             ) : progressData ? (
               <div className="space-y-4">
                 {/* Summary */}
-                <div className="bg-palette-beige rounded-lg p-4 border border-palette-mauve/20">
+                <div className="glass-panel rounded-2xl p-4">
                   <p className="font-semibold text-palette-dark mb-1">{progressData.video_title}</p>
                   <p className="text-sm text-palette-dark/70">Patient: {progressData.patient}</p>
                   <p className="text-sm text-palette-dark/70">

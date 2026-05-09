@@ -11,15 +11,15 @@ export const Alert = ({ type = 'info', message, onClose, duration = 3500 }) => {
   }, [onClose, message, duration]);
 
   const bgColor = {
-    success: 'bg-palette-blush text-palette-dark border-palette-mauve',
-    error: 'bg-red-100 text-red-800 border-red-300',
-    warning: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-    info: 'bg-palette-cream text-palette-dark border-palette-beige',
+    success: 'bg-emerald-50 text-emerald-900 border-emerald-200',
+    error: 'bg-rose-50 text-rose-900 border-rose-200',
+    warning: 'bg-amber-50 text-amber-900 border-amber-200',
+    info: 'bg-white/95 text-palette-dark border-white/70',
   }[type];
 
   return (
     <div
-      className={`fixed top-4 right-4 z-[1000] w-[min(92vw,380px)] border rounded-lg p-4 shadow-lg flex items-center justify-between ${bgColor}`}
+      className={`fixed top-4 right-4 z-[1000] w-[min(92vw,420px)] border rounded-3xl p-4 shadow-2xl backdrop-blur-xl flex items-center justify-between animate-fade-in-up ${bgColor}`}
       role="alert"
     >
       <span className="pr-4 text-sm font-medium">{message}</span>
