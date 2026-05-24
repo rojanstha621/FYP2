@@ -139,11 +139,14 @@ export default function AdminVideosPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-palette-dark">Video Management</h1>
+      <div className="glass-panel rounded-[2rem] p-6 md:p-8 mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.24em] text-palette-dark/50">Admin workspace</p>
+          <h1 className="mt-2 text-3xl font-bold text-palette-dark">Video Management</h1>
+        </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="bg-palette-mauve text-white px-4 py-2 rounded-lg hover:bg-palette-dark flex items-center gap-2"
+          className="btn-primary"
         >
           <FiPlus /> Add Video
         </button>
@@ -158,7 +161,7 @@ export default function AdminVideosPage() {
       )}
 
       {/* Filters */}
-      <div className="bg-palette-cream p-4 rounded-lg shadow-sm mb-6">
+      <div className="glass-panel p-4 rounded-3xl mb-6 border border-palette-mauve/15">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-palette-dark/80 mb-2">
@@ -169,7 +172,7 @@ export default function AdminVideosPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by title..."
-              className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
+              className="input-field"
             />
           </div>
           
@@ -180,7 +183,7 @@ export default function AdminVideosPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
+              className="input-field"
             >
               <option value="">All</option>
               <option value="true">Active</option>
@@ -196,9 +199,9 @@ export default function AdminVideosPage() {
           <Spinner />
         </div>
       ) : (
-        <div className="bg-palette-cream rounded-lg shadow-sm overflow-hidden">
+        <div className="glass-panel rounded-3xl overflow-hidden border border-palette-mauve/15">
           <table className="min-w-full divide-y divide-palette-mauve/30">
-            <thead className="bg-palette-beige">
+            <thead className="bg-white/70">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-palette-dark/60 uppercase tracking-wider">
                   Video
@@ -217,7 +220,7 @@ export default function AdminVideosPage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-palette-cream divide-y divide-palette-mauve/30">
+            <tbody className="bg-transparent divide-y divide-palette-mauve/30">
               {videos.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="px-6 py-4 text-center text-palette-dark/60">
@@ -226,7 +229,7 @@ export default function AdminVideosPage() {
                 </tr>
               ) : (
                 videos.map((video) => (
-                  <tr key={video.id} className="hover:bg-palette-beige">
+                  <tr key={video.id} className="hover:bg-white/70">
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <img
@@ -304,7 +307,7 @@ export default function AdminVideosPage() {
       {/* Create/Edit Modal */}
       {(showCreateModal || showEditModal) && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-palette-cream">
+          <div className="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-3xl glass-panel">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium text-palette-dark">
                 {showCreateModal ? 'Add New Video' : 'Edit Video'}
@@ -333,7 +336,7 @@ export default function AdminVideosPage() {
                     value={formData.title}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
+                    className="input-field"
                   />
                 </div>
 
@@ -346,7 +349,7 @@ export default function AdminVideosPage() {
                     value={formData.description}
                     onChange={handleInputChange}
                     rows="3"
-                    className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
+                    className="input-field"
                   />
                 </div>
 
@@ -361,7 +364,7 @@ export default function AdminVideosPage() {
                     onChange={handleInputChange}
                     required
                     placeholder="https://www.youtube.com/watch?v=..."
-                    className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
+                    className="input-field"
                   />
                   <p className="mt-1 text-sm text-palette-dark/60">
                     Supported formats: youtube.com/watch?v=, youtu.be/, youtube.com/embed/
@@ -391,13 +394,13 @@ export default function AdminVideosPage() {
                     setShowEditModal(false);
                     resetForm();
                   }}
-                  className="px-4 py-2 text-sm font-medium text-palette-dark/80 bg-palette-cream border border-palette-mauve rounded-md hover:bg-palette-beige"
+                  className="btn-secondary"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-palette-mauve rounded-md hover:bg-palette-dark"
+                  className="btn-primary"
                 >
                   {showCreateModal ? 'Create' : 'Update'}
                 </button>
@@ -410,7 +413,7 @@ export default function AdminVideosPage() {
       {/* Detail Modal */}
       {showDetailModal && selectedVideo && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-full max-w-3xl shadow-lg rounded-md bg-palette-cream">
+          <div className="relative top-20 mx-auto p-5 border w-full max-w-3xl shadow-lg rounded-3xl glass-panel">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium text-palette-dark">Video Details</h3>
               <button
@@ -477,7 +480,7 @@ export default function AdminVideosPage() {
             <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setShowDetailModal(false)}
-                className="px-4 py-2 text-sm font-medium text-palette-dark/80 bg-palette-cream border border-palette-mauve rounded-md hover:bg-palette-beige"
+                className="btn-secondary"
               >
                 Close
               </button>

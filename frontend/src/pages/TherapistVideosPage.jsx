@@ -143,6 +143,7 @@ export default function TherapistVideosPage() {
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [segmentSliderMaxSeconds, setSegmentSliderMaxSeconds] = useState(DEFAULT_SEGMENT_SLIDER_MAX_SECONDS);
   const [isDurationLoading, setIsDurationLoading] = useState(false);
+  const [showAllVideos, setShowAllVideos] = useState(false);
   
   // Progress panel
   const [showProgressPanel, setShowProgressPanel] = useState(false);
@@ -513,6 +514,12 @@ export default function TherapistVideosPage() {
     setSelectedVideo(null);
   };
 
+  const handleCancelAssignModal = () => {
+    setShowAssignModal(false);
+    resetAssignmentForm();
+    window.location.reload();
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setAssignmentData(prev => ({
@@ -557,6 +564,11 @@ export default function TherapistVideosPage() {
     );
   }, [selectedVideo?.youtube_embed_url, sliderStartValue, sliderEndValue]);
 
+  const visibleVideos = useMemo(
+    () => (showAllVideos ? videos : videos.slice(0, 9)),
+    [videos, showAllVideos],
+  );
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-6 animate-fade-in-up">
       <section className="glass-panel rounded-[2rem] p-6 md:p-8">
@@ -582,7 +594,7 @@ export default function TherapistVideosPage() {
 
       {/* Tabs */}
       <div className="mb-6">
-        <div className="rounded-2xl border border-white/60 bg-white/70 px-4 pt-3 shadow-sm backdrop-blur-xl">
+        <div className="glass-panel rounded-3xl px-4 pt-3 border border-palette-mauve/15">
           <nav className="-mb-px flex space-x-8">
             <button
               onClick={() => setActiveTab('browse')}
@@ -609,7 +621,7 @@ export default function TherapistVideosPage() {
       </div>
 
       {/* Filters */}
-      <div className="glass-panel p-4 rounded-3xl mb-6">
+      <div className="glass-panel p-4 rounded-3xl mb-6 border border-palette-mauve/15">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {activeTab === 'browse' ? (
             <div>
@@ -621,7 +633,7 @@ export default function TherapistVideosPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search by title..."
-                className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
+                className="w-full px-3 py-2 border border-palette-mauve/30 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-palette-mauve"
               />
             </div>
           ) : (
@@ -632,7 +644,7 @@ export default function TherapistVideosPage() {
               <select
                 value={patientFilter}
                 onChange={(e) => setPatientFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
+                className="w-full px-3 py-2 border border-palette-mauve/30 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-palette-mauve"
               >
                 <option value="">All Patients</option>
                 {myPatients.map(patient => (
@@ -653,50 +665,64 @@ export default function TherapistVideosPage() {
         </div>
       ) : activeTab === 'browse' ? (
         // Videos Grid
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {videos.length === 0 ? (
-            <div className="col-span-full text-center py-12 text-palette-dark/60">
-              No videos available
-            </div>
-          ) : (
-            videos.map((video) => (
-              <div key={video.id} className="bg-palette-cream rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-                <div className="aspect-video bg-palette-cream/60 relative group cursor-pointer" onClick={() => handleViewDetails(video)}>
-                  <img
-                    src={video.thumbnail_url}
-                    alt={video.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center">
-                    <FiPlay className="text-white text-5xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </div>
-                </div>
-                <div className="p-4">
-                  <h3 className="font-semibold text-palette-dark mb-2">{video.title}</h3>
-                  <p className="text-sm text-palette-dark/70 line-clamp-2 mb-4">
-                    {video.description}
-                  </p>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-palette-dark/60">
-                      {video.assignment_count || 0} assignments
-                    </span>
-                    <button
-                      onClick={() => handleAssignClick(video)}
-                      className="bg-palette-mauve text-white px-3 py-1 rounded text-sm hover:bg-palette-dark flex items-center gap-1"
-                    >
-                      <FiUserPlus className="text-sm" /> Assign
-                    </button>
-                  </div>
-                </div>
+        <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {visibleVideos.length === 0 ? (
+              <div className="col-span-full text-center py-12 text-palette-dark/60">
+                No videos available
               </div>
-            ))
+            ) : (
+              visibleVideos.map((video) => (
+                <div key={video.id} className="glass-panel rounded-3xl overflow-hidden border border-palette-mauve/15 hover:shadow-lg transition-shadow">
+                  <div className="aspect-video bg-white/60 relative group cursor-pointer" onClick={() => handleViewDetails(video)}>
+                    <img
+                      src={video.thumbnail_url}
+                      alt={video.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center">
+                      <FiPlay className="text-white text-5xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-semibold text-palette-dark mb-2">{video.title}</h3>
+                    <p className="text-sm text-palette-dark/70 line-clamp-2 mb-4">
+                      {video.description}
+                    </p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-palette-dark/60">
+                        {video.assignment_count || 0} assignments
+                      </span>
+                      <button
+                        onClick={() => handleAssignClick(video)}
+                        className="btn-primary px-3 py-1 text-sm"
+                      >
+                        <FiUserPlus className="text-sm" /> Assign
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {videos.length > 9 && (
+            <div className="mt-6 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setShowAllVideos((value) => !value)}
+                className="btn-secondary text-sm"
+              >
+                {showAllVideos ? 'Show fewer videos' : `Show all videos (${videos.length})`}
+              </button>
+            </div>
           )}
         </div>
       ) : (
         // Assignments Table
-        <div className="bg-palette-cream rounded-lg shadow-sm overflow-hidden">
+        <div className="glass-panel rounded-3xl overflow-hidden border border-palette-mauve/15">
           <table className="min-w-full divide-y divide-palette-mauve/30">
-            <thead className="bg-palette-beige">
+            <thead className="bg-white/70">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-palette-dark/60 uppercase tracking-wider">
                   Video
@@ -721,7 +747,7 @@ export default function TherapistVideosPage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-palette-cream divide-y divide-palette-mauve/30">
+            <tbody className="bg-transparent divide-y divide-palette-mauve/30">
               {assignments.length === 0 ? (
                 <tr>
                   <td colSpan="7" className="px-6 py-4 text-center text-palette-dark/60">
@@ -730,7 +756,7 @@ export default function TherapistVideosPage() {
                 </tr>
               ) : (
                 assignments.map((assignment) => (
-                  <tr key={assignment.id} className="hover:bg-palette-beige">
+                  <tr key={assignment.id} className="hover:bg-white/70">
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <img
@@ -851,255 +877,256 @@ export default function TherapistVideosPage() {
 
       {/* Assign Modal */}
       {showAssignModal && selectedVideo && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-palette-cream">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-palette-dark">Assign Video</h3>
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-10 overflow-y-auto">
+          <div className="w-full max-w-6xl rounded-[2rem] bg-palette-cream shadow-2xl border border-white/70 overflow-hidden">
+            <div className="flex items-center justify-between border-b border-palette-mauve/15 px-5 py-4">
+              <div>
+                <h3 className="text-xl font-bold text-palette-dark">Assign Video</h3>
+                <p className="text-sm text-palette-dark/60">Preview the video on the left and fill the assignment on the right.</p>
+              </div>
               <button
-                onClick={() => {
-                  setShowAssignModal(false);
-                  resetAssignmentForm();
-                }}
-                className="text-palette-dark/50 hover:text-palette-dark/60"
+                onClick={handleCancelAssignModal}
+                className="text-2xl leading-none text-palette-dark/45 hover:text-palette-dark"
+                aria-label="Close assign modal"
               >
                 ×
               </button>
             </div>
-            
-            <div className="mb-4 p-3 bg-palette-beige rounded">
-              <p className="text-sm font-medium text-palette-dark">{selectedVideo.title}</p>
-            </div>
 
-            <form onSubmit={handleAssignVideo}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-palette-dark/80 mb-1">
-                    Select Patient *
-                  </label>
-                  <select
-                    name="patient"
-                    value={assignmentData.patient}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
-                  >
-                    <option value="">Choose a patient...</option>
-                    {myPatients.map(patient => (
-                      <option key={patient.id} value={patient.id}>
-                        {patient.first_name} {patient.last_name} - {patient.email}
-                      </option>
-                    ))}
-                  </select>
+            <div className="grid gap-0 lg:grid-cols-[1.15fr_0.85fr]">
+              <div className="border-b lg:border-b-0 lg:border-r border-palette-mauve/15 bg-palette-dark/95 p-4 md:p-6">
+                <div className="mb-4 rounded-2xl bg-palette-beige/10 px-4 py-3 text-white/90">
+                  <p className="text-xs uppercase tracking-[0.22em] text-white/55">Selected video</p>
+                  <p className="mt-1 text-lg font-semibold">{selectedVideo.title}</p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-palette-dark/80 mb-1">
-                    Notes (Optional)
-                  </label>
-                  <textarea
-                    name="notes"
-                    value={assignmentData.notes}
-                    onChange={handleInputChange}
-                    rows="3"
-                    placeholder="Add any instructions or notes for the patient..."
-                    className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
-                  />
-                </div>
-
-                <div className="space-y-3 border border-palette-mauve/30 bg-palette-beige/60 rounded-md p-3">
-                  <p className="text-sm font-medium text-palette-dark/90">Segment Picker</p>
-                  <div className="aspect-video w-full rounded overflow-hidden bg-black">
+                <div className="space-y-3 border border-white/10 bg-white/5 rounded-2xl p-3 md:p-4">
+                  <p className="text-sm font-medium text-white/85">Segment Picker</p>
+                  <div className="aspect-video w-full overflow-hidden rounded-xl bg-black">
                     <iframe
                       key={previewEmbedUrl}
                       src={previewEmbedUrl || selectedVideo.youtube_embed_url}
                       title={selectedVideo.title}
-                      className="w-full h-full"
+                      className="h-full w-full"
                       allowFullScreen
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     />
                   </div>
 
-                  <div>
-                    <div className="flex justify-between text-xs text-palette-dark/70 mb-1">
+                  <div className="rounded-xl bg-black/20 p-3 text-sm text-white/80">
+                    <div className="flex justify-between gap-4 text-xs mb-1">
                       <span>Start: {formatSecondsToTimestamp(sliderStartValue)}</span>
                       <span>End: {formatSecondsToTimestamp(sliderEndValue)}</span>
                     </div>
-                    <p className="text-xs text-palette-dark/70 mb-2">
+                    <p className="text-xs mb-3 text-white/60">
                       {isDurationLoading
                         ? 'Detecting video length...'
                         : `Video length: ${formatSecondsToTimestamp(safeSliderMaxSeconds)}`}
                     </p>
-                    <label className="block text-xs text-palette-dark/80 mb-1">Start Slider</label>
+                    <label className="block text-xs text-white/70 mb-1">Start Slider</label>
                     <input
                       type="range"
                       min="0"
                       max={String(safeSliderMaxSeconds - 1)}
                       value={sliderStartValue}
                       onChange={(e) => handleSegmentSliderChange('segment_start', Number(e.target.value))}
-                      className="w-full accent-palette-mauve"
+                      className="w-full accent-palette-blush"
                     />
-                    <label className="block text-xs text-palette-dark/80 mb-1 mt-2">End Slider</label>
+                    <label className="block text-xs text-white/70 mb-1 mt-3">End Slider</label>
                     <input
                       type="range"
                       min={String(sliderStartValue + 1)}
                       max={String(safeSliderMaxSeconds)}
                       value={sliderEndValue}
                       onChange={(e) => handleSegmentSliderChange('segment_end', Number(e.target.value))}
-                      className="w-full accent-palette-mauve"
+                      className="w-full accent-palette-blush"
                     />
                   </div>
                 </div>
+              </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div className="p-5 md:p-6">
+                <form onSubmit={handleAssignVideo} className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-palette-dark/80 mb-1">
-                      Start Time
+                      Select Patient *
                     </label>
-                    <input
-                      type="text"
-                      name="segment_start"
-                      value={assignmentData.segment_start}
+                    <select
+                      name="patient"
+                      value={assignmentData.patient}
                       onChange={handleInputChange}
-                      placeholder="00:50"
-                      className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
-                    />
+                      required
+                      className="w-full rounded-2xl border border-palette-mauve/25 bg-white/80 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-palette-mauve"
+                    >
+                      <option value="">Choose a patient...</option>
+                      {myPatients.map((patient) => (
+                        <option key={patient.id} value={patient.id}>
+                          {patient.first_name} {patient.last_name} - {patient.email}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-palette-dark/80 mb-1">
-                      End Time
+                      Notes (Optional)
                     </label>
-                    <input
-                      type="text"
-                      name="segment_end"
-                      value={assignmentData.segment_end}
+                    <textarea
+                      name="notes"
+                      value={assignmentData.notes}
                       onChange={handleInputChange}
-                      placeholder="1:90"
-                      className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
+                      rows="3"
+                      placeholder="Add any instructions or notes for the patient..."
+                      className="w-full rounded-2xl border border-palette-mauve/25 bg-white/80 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-palette-mauve"
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-palette-dark/80 mb-1">
-                      Repeat Count
-                      
-                    </label>
-                    <input
-                      type="number"
-                      name="repeat_count"
-                      value={assignmentData.repeat_count}
-                      onChange={handleInputChange}
-                      min="1"
-                      className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-palette-dark/80 mb-1">
-                      Pause (sec)
-                    </label>
-                    <input
-                      type="number"
-                      name="pause_between_repeats_seconds"
-                      value={assignmentData.pause_between_repeats_seconds}
-                      onChange={handleInputChange}
-                      min="0"
-                      className="w-full px-3 py-2 border border-palette-mauve rounded-md bg-palette-beige focus:outline-none focus:ring-2 focus:ring-palette-mauve"
-                    />
-                  </div>
-                </div>
-
-                <p className="text-xs text-palette-dark/60">
-                  Moving the slider reloads preview from the selected start/end. Use mm:ss or total seconds.
-                </p>
-
-                {/* ── Daily Schedule ── */}
-                <div className="border border-palette-mauve/30 bg-palette-beige/60 rounded-md p-3 space-y-3">
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={assignmentData.use_schedule}
-                      onChange={(e) =>
-                        setAssignmentData((p) => ({ ...p, use_schedule: e.target.checked }))
-                      }
-                      className="accent-palette-mauve w-4 h-4"
-                    />
-                    <span className="text-sm font-medium text-palette-dark flex items-center gap-1">
-                      <FiCalendar className="inline" /> Enable Daily Schedule
-                    </span>
-                  </label>
-
-                  {assignmentData.use_schedule && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
-                      <div>
-                        <label className="block text-xs font-medium text-palette-dark/80 mb-1">
-                          Start Date *
-                        </label>
-                        <input
-                          type="date"
-                          name="schedule_start_date"
-                          value={assignmentData.schedule_start_date}
-                          onChange={handleInputChange}
-                          min={new Date().toISOString().split('T')[0]}
-                          required
-                          className="w-full px-2 py-2 border border-palette-mauve rounded-md bg-palette-beige text-sm focus:outline-none focus:ring-2 focus:ring-palette-mauve"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-palette-dark/80 mb-1">
-                          Duration (days) *
-                        </label>
-                        <input
-                          type="number"
-                          name="schedule_duration_days"
-                          value={assignmentData.schedule_duration_days}
-                          onChange={handleInputChange}
-                          min="1"
-                          required
-                          className="w-full px-2 py-2 border border-palette-mauve rounded-md bg-palette-beige text-sm focus:outline-none focus:ring-2 focus:ring-palette-mauve"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-palette-dark/80 mb-1">
-                          Unlock Time (daily) *
-                        </label>
-                        <input
-                          type="time"
-                          name="scheduled_time"
-                          value={assignmentData.scheduled_time}
-                          onChange={handleInputChange}
-                          required
-                          className="w-full px-2 py-2 border border-palette-mauve rounded-md bg-palette-beige text-sm focus:outline-none focus:ring-2 focus:ring-palette-mauve"
-                        />
-                      </div>
-                      <p className="col-span-full text-xs text-palette-dark/60">
-                        The video will unlock for the patient every day at the set time.
-                        Once watched that day, it disappears until the next day.
-                      </p>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-palette-dark/80 mb-1">
+                        Start Time
+                      </label>
+                      <input
+                        type="text"
+                        name="segment_start"
+                        value={assignmentData.segment_start}
+                        onChange={handleInputChange}
+                        placeholder="00:50"
+                        className="w-full rounded-2xl border border-palette-mauve/25 bg-white/80 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-palette-mauve"
+                      />
                     </div>
-                  )}
-                </div>
-              </div>
 
-              <div className="mt-6 flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAssignModal(false);
-                    resetAssignmentForm();
-                  }}
-                  className="px-4 py-2 text-sm font-medium text-palette-dark/80 bg-palette-cream border border-palette-mauve rounded-md hover:bg-palette-beige"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-palette-mauve rounded-md hover:bg-palette-dark"
-                >
-                  Assign Video
-                </button>
+                    <div>
+                      <label className="block text-sm font-medium text-palette-dark/80 mb-1">
+                        End Time
+                      </label>
+                      <input
+                        type="text"
+                        name="segment_end"
+                        value={assignmentData.segment_end}
+                        onChange={handleInputChange}
+                        placeholder="1:90"
+                        className="w-full rounded-2xl border border-palette-mauve/25 bg-white/80 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-palette-mauve"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-palette-dark/80 mb-1">
+                        Repeat Count
+                      </label>
+                      <input
+                        type="number"
+                        name="repeat_count"
+                        value={assignmentData.repeat_count}
+                        onChange={handleInputChange}
+                        min="1"
+                        className="w-full rounded-2xl border border-palette-mauve/25 bg-white/80 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-palette-mauve"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-palette-dark/80 mb-1">
+                        Pause (sec)
+                      </label>
+                      <input
+                        type="number"
+                        name="pause_between_repeats_seconds"
+                        value={assignmentData.pause_between_repeats_seconds}
+                        onChange={handleInputChange}
+                        min="0"
+                        className="w-full rounded-2xl border border-palette-mauve/25 bg-white/80 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-palette-mauve"
+                      />
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-palette-dark/60">
+                    Moving the slider reloads preview from the selected start/end. Use mm:ss or total seconds.
+                  </p>
+
+                  <div className="border border-palette-mauve/20 bg-white/60 rounded-2xl p-4 space-y-3">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={assignmentData.use_schedule}
+                        onChange={(e) =>
+                          setAssignmentData((p) => ({ ...p, use_schedule: e.target.checked }))
+                        }
+                        className="accent-palette-mauve w-4 h-4"
+                      />
+                      <span className="text-sm font-medium text-palette-dark flex items-center gap-1">
+                        <FiCalendar className="inline" /> Enable Daily Schedule
+                      </span>
+                    </label>
+
+                    {assignmentData.use_schedule && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+                        <div>
+                          <label className="block text-xs font-medium text-palette-dark/80 mb-1">
+                            Start Date *
+                          </label>
+                          <input
+                            type="date"
+                            name="schedule_start_date"
+                            value={assignmentData.schedule_start_date}
+                            onChange={handleInputChange}
+                            min={new Date().toISOString().split('T')[0]}
+                            required
+                            className="w-full rounded-2xl border border-palette-mauve/25 bg-white/80 px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-palette-mauve"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-palette-dark/80 mb-1">
+                            Duration (days) *
+                          </label>
+                          <input
+                            type="number"
+                            name="schedule_duration_days"
+                            value={assignmentData.schedule_duration_days}
+                            onChange={handleInputChange}
+                            min="1"
+                            required
+                            className="w-full rounded-2xl border border-palette-mauve/25 bg-white/80 px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-palette-mauve"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-palette-dark/80 mb-1">
+                            Unlock Time (daily) *
+                          </label>
+                          <input
+                            type="time"
+                            name="scheduled_time"
+                            value={assignmentData.scheduled_time}
+                            onChange={handleInputChange}
+                            required
+                            className="w-full rounded-2xl border border-palette-mauve/25 bg-white/80 px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-palette-mauve"
+                          />
+                        </div>
+                        <p className="col-span-full text-xs text-palette-dark/60">
+                          The video will unlock for the patient every day at the set time.
+                          Once watched that day, it disappears until the next day.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={handleCancelAssignModal}
+                      className="px-4 py-2 text-sm font-medium text-palette-dark/80 bg-white/70 border border-palette-mauve/25 rounded-2xl hover:bg-white"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 text-sm font-medium text-white bg-palette-mauve rounded-2xl hover:bg-palette-dark"
+                    >
+                      Assign Video
+                    </button>
+                  </div>
+                </form>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}

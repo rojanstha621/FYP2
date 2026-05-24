@@ -12,6 +12,7 @@ class User(AbstractUser):
         ADMIN = "ADMIN", _("Admin")
         PARENT = "PATIENT", _("Patient")
         BABYSITTER = "THERAPIST", _("Therapist")
+        DOCTOR = "DOCTOR", _("Doctor")
         NURSE = "NURSE", _("Nurse")
 
     class TherapistStatusChoices(models.TextChoices):
@@ -55,6 +56,8 @@ class User(AbstractUser):
 
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+    is_email_verified = models.BooleanField(default=False)
+    email_verified_at = models.DateTimeField(blank=True, null=True)
     is_superuser = models.BooleanField(default=False)
 
     objects = CustomUserManager()

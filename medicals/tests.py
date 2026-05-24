@@ -62,6 +62,28 @@ class NurseWorkflowTests(APITestCase):
 			any(item["id"] == str(self.therapist.id) for item in directory.data["data"]["therapists"])
 		)
 
+	def test_therapist_can_assign_nurse_to_their_patient(self):
+		TherapistPatientAssignment.objects.create(
+			therapist=self.therapist,
+			patient=self.patient,
+			is_active=True,
+		)
+		self.client.force_authenticate(user=self.therapist)
+
+		response = self.client.post(
+			"/api/medicals/nurse-assignments/",
+			{
+				"nurse": str(self.nurse.id),
+				"patient": str(self.patient.id),
+			},
+			format="json",
+		)
+
+		self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+		self.assertTrue(response.data["success"])
+		self.assertEqual(str(response.data["data"]["nurse"]), str(self.nurse.id))
+		self.assertEqual(str(response.data["data"]["patient"]), str(self.patient.id))
+
 	def test_nurse_can_create_medical_history_for_assigned_patient(self):
 		NursePatientAssignment.objects.create(nurse=self.nurse, patient=self.patient, is_active=True)
 		self.client.force_authenticate(user=self.nurse)

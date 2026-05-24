@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Card, Button } from '../components/FormElements';
 import { useAuth } from '../hooks/useAuth';
+import NurseDashboard from '../components/NurseDashboard';
 
 export const NurseDashboardPage = () => {
   const { user } = useAuth();
@@ -44,7 +45,7 @@ export const NurseDashboardPage = () => {
           </p>
         </div>
 
-        <div className="glass-panel-strong rounded-3xl p-4 md:p-5 min-w-[240px]">
+        <div className="glass-panel rounded-3xl p-4 md:p-5 min-w-[240px] border border-palette-mauve/15">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-palette-dark/50">Today</p>
           <div className="mt-3 space-y-3">
             {highlights.map((item) => (
@@ -65,6 +66,10 @@ export const NurseDashboardPage = () => {
           </Card>
         ))}
       </div>
+
+      <section className="mt-8">
+        <NurseDashboard />
+      </section>
 
       <div className="grid gap-6 md:grid-cols-2">
         {cards.map((card) => (

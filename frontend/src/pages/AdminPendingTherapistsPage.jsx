@@ -64,7 +64,10 @@ export default function AdminPendingTherapistsPage() {
 
   return (
       <div className="max-w-7xl mx-auto px-4 py-6">
-        <h1 className="text-3xl font-bold mb-6">Pending Therapist Approvals</h1>
+        <div className="glass-panel rounded-[2rem] p-6 md:p-8 mb-6">
+          <p className="text-xs font-bold uppercase tracking-[0.24em] text-palette-dark/50">Admin workspace</p>
+          <h1 className="mt-2 text-3xl font-bold text-palette-dark">Pending Therapist Approvals</h1>
+        </div>
 
         {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
         {success && <Alert type="success" message={success} onClose={() => setSuccess(null)} />}
@@ -72,7 +75,7 @@ export default function AdminPendingTherapistsPage() {
         {loading ? (
           <Spinner />
         ) : (
-          <div className="bg-palette-cream rounded-lg shadow divide-y">
+          <div className="glass-panel rounded-3xl border border-palette-mauve/15 divide-y">
             {therapists.length ? (
               therapists.map((therapist) => (
                 <div key={therapist.id} className="p-4">
@@ -95,14 +98,14 @@ export default function AdminPendingTherapistsPage() {
                       <button
                         onClick={() => handleApprove(therapist.id)}
                         disabled={processing === therapist.id}
-                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                        className="btn-primary"
                       >
                         {processing === therapist.id ? 'Processing...' : 'Approve'}
                       </button>
                       <button
                         onClick={() => handleReject(therapist.id)}
                         disabled={processing === therapist.id}
-                        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                        className="btn-danger"
                       >
                         {processing === therapist.id ? 'Processing...' : 'Reject'}
                       </button>

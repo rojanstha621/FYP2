@@ -20,7 +20,7 @@ export default function PatientDashboardPage() {
     try {
       setLoading(true);
       const res = await authAPI.getPatientDashboard();
-      setDashboardData(res.data.result);
+      setDashboardData(res.data?.result || res.data || null);
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load dashboard');
@@ -47,7 +47,7 @@ export default function PatientDashboardPage() {
           </h1>
           <p className="mt-2 text-palette-dark/70">Track your recovery and therapist updates</p>
         </div>
-        <div className="glass-panel-strong rounded-3xl px-4 py-3 text-sm text-palette-dark/70 max-w-sm">
+        <div className="glass-panel rounded-3xl px-4 py-3 text-sm text-palette-dark/70 max-w-sm border border-palette-mauve/15">
           Your therapist overview, medical records, videos, and feedback are grouped below.
         </div>
       </div>
@@ -91,7 +91,7 @@ export default function PatientDashboardPage() {
             </div>
           </div>
         ) : (
-          <div className="rounded-3xl border border-dashed border-palette-dark/15 bg-white/60 px-6 py-10 text-center">
+          <div className="glass-panel rounded-3xl border border-dashed border-palette-dark/15 px-6 py-10 text-center">
             <svg
               className="mx-auto h-12 w-12 text-palette-dark/50"
               fill="none"
@@ -106,11 +106,8 @@ export default function PatientDashboardPage() {
               />
             </svg>
             <p className="mt-2 text-palette-dark/60">No therapist assigned yet</p>
-            <Link
-              to="/therapists"
-              className="mt-5 inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-palette-mauve to-[#6f4c60] px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-transform hover:-translate-y-0.5"
-            >
-              Browse Therapists
+            <Link to="/therapists" className="mt-5 inline-flex">
+              <Button variant="primary">Browse Therapists</Button>
             </Link>
           </div>
         )}

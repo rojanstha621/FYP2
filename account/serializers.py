@@ -1,10 +1,63 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
+from django.core.mail import send_mail
+from django.conf import settings
+from django.contrib.auth.tokens import default_token_generator
+from django.db import transaction
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.urls import reverse
+from smtplib import SMTPAuthenticationError, SMTPException
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import User, UserProfile
+
+
+def build_verification_link(user, request=None):
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    token = default_token_generator.make_token(user)
+    frontend_base = getattr(settings, "FRONTEND_URL", "http://localhost:5173").rstrip("/")
+    path = f"/verify-email?uid={uid}&token={token}"
+    return f"{frontend_base}{path}"
+
+
+def send_verification_email(user, request=None):
+    verification_link = build_verification_link(user, request=request)
+    subject = "Verify your email address"
+    message = (
+        f"Hi {user.first_name},\n\n"
+        f"Please verify your email address by opening this link:\n{verification_link}\n\n"
+        "If you did not create this account, you can ignore this email."
+    )
+
+    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=from_email,
+            recipient_list=[user.email],
+            fail_silently=False,
+        )
+    except SMTPAuthenticationError as exc:
+        raise serializers.ValidationError(
+            {
+                "detail": (
+                    "Email authentication failed. Check DJANGO_EMAIL_HOST_USER and "
+                    "DJANGO_EMAIL_HOST_PASSWORD in your .env file."
+                )
+            }
+        ) from exc
+    except SMTPException as exc:
+        raise serializers.ValidationError(
+            {
+                "detail": (
+                    "Verification email could not be sent. Check the SMTP host, port, "
+                    "TLS setting, and sender credentials."
+                )
+            }
+        ) from exc
 
 
 def build_profile_picture_url(user, profile, request=None):
@@ -39,6 +92,11 @@ class LoginSerializer(serializers.Serializer):
         if not user.is_active:
             raise serializers.ValidationError({"detail": "Account is disabled"})
 
+        if not user.is_email_verified:
+            raise serializers.ValidationError(
+                {"detail": "Please verify your email address before logging in."}
+            )
+
         attrs["user"] = user
         return attrs
 
@@ -70,9 +128,10 @@ class UserBasicSerializer(serializers.ModelSerializer):
             "phone_number",
             "role",
             "is_active",
+            "is_email_verified",
             "created_at",
         ]
-        read_only_fields = ["id", "is_active", "created_at"]
+        read_only_fields = ["id", "is_active", "is_email_verified", "created_at"]
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -177,6 +236,7 @@ class ChangePasswordSerializer(serializers.Serializer):
         user.save(update_fields=["password"])
         return {}
 
+
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         write_only=True,
@@ -196,30 +256,65 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         password = validated_data.pop("password")
+        request = self.context.get("request")
 
-        # Create user
         role = validated_data.get("role")
 
-        user = User.objects.create(
-            email=validated_data["email"],
-            first_name=validated_data.get("first_name"),
-            last_name=validated_data.get("last_name"),
-            phone_number=validated_data.get("phone_number"),
-            role=role,
-            is_active=True,
-        )
+        with transaction.atomic():
+            user = User.objects.create_user(
+                email=validated_data["email"],
+                password=password,
+                first_name=validated_data.get("first_name"),
+                last_name=validated_data.get("last_name"),
+                phone_number=validated_data.get("phone_number"),
+                role=role,
+                is_active=True,
+                is_email_verified=False,
+            )
 
-        # If therapist registers, set status to PENDING and not approved
-        if role == "THERAPIST":
-            user.therapist_status = User.TherapistStatusChoices.PENDING
-            user.is_therapist_approved = False
+            if role == "THERAPIST":
+                user.therapist_status = User.TherapistStatusChoices.PENDING
+                user.is_therapist_approved = False
+                user.save(
+                    update_fields=["therapist_status", "is_therapist_approved"]
+                )
 
-        user.set_password(password)
-        user.save()
+            UserProfile.objects.create(user=user)
+            send_verification_email(user, request=request)
 
-        # Create empty profile automatically
-        UserProfile.objects.create(user=user)
+        return user
 
+
+class VerifyEmailSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+
+    def validate(self, attrs):
+        uid = attrs.get("uid")
+        token = attrs.get("token")
+
+        try:
+            user_id = force_str(urlsafe_base64_decode(uid))
+            user = User.objects.get(pk=user_id)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            raise serializers.ValidationError({"detail": "Invalid verification link."})
+
+        if user.is_email_verified:
+            raise serializers.ValidationError({"detail": "Email is already verified."})
+
+        if not default_token_generator.check_token(user, token):
+            raise serializers.ValidationError({"detail": "Verification link is invalid or expired."})
+
+        attrs["user"] = user
+        return attrs
+
+    def save(self, **kwargs):
+        user = self.validated_data["user"]
+        from django.utils import timezone
+
+        user.is_email_verified = True
+        user.email_verified_at = timezone.now()
+        user.save(update_fields=["is_email_verified", "email_verified_at"])
         return user
 
 
@@ -286,6 +381,7 @@ class AdminUserListSerializer(serializers.ModelSerializer):
             "therapist_status",
             "is_therapist_approved",
             "is_active",
+            "is_email_verified",
             "created_at",
             "updated_at",
         ]
@@ -307,6 +403,7 @@ class AdminUserDetailSerializer(serializers.ModelSerializer):
             "therapist_status",
             "is_therapist_approved",
             "is_active",
+            "is_email_verified",
             "created_at",
             "updated_at",
             "profile",

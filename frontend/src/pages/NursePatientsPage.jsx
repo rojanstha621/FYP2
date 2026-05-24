@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { medicalAPI, nurseAPI } from '../services/api';
+import { assignmentAPI, medicalAPI, nurseAPI } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import { Card, Button, Select, Textarea } from '../components/FormElements';
 import { Alert } from '../components/Alert';
@@ -24,6 +24,7 @@ export const NursePatientsPage = () => {
   const [assignments, setAssignments] = useState([]);
   const [patients, setPatients] = useState([]);
   const [nurses, setNurses] = useState([]);
+  const [therapistAssignments, setTherapistAssignments] = useState([]);
   const [histories, setHistories] = useState([]);
   const [assignmentPatientId, setAssignmentPatientId] = useState('');
   const [assignmentNurseId, setAssignmentNurseId] = useState('');
@@ -32,6 +33,8 @@ export const NursePatientsPage = () => {
   const [editingHistoryId, setEditingHistoryId] = useState(null);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [savingHistory, setSavingHistory] = useState(false);
+  const [showAllAssignments, setShowAllAssignments] = useState(false);
+  const [showAllPatients, setShowAllPatients] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -49,18 +52,21 @@ export const NursePatientsPage = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [assignmentRes, directoryRes, historyRes] = await Promise.all([
+      const [assignmentRes, directoryRes, historyRes, therapistAssignmentRes] = await Promise.all([
         nurseAPI.getAssignments(),
         nurseAPI.getDirectory(),
         medicalAPI.getMedicalHistories(),
+        assignmentAPI.getAssignments(),
       ]);
 
       const assignmentData = extractList(assignmentRes.data);
       const directory = directoryRes.data?.result || directoryRes.data || {};
+      const therapistAssignmentData = extractList(therapistAssignmentRes.data);
 
       setAssignments(assignmentData.filter((item) => item.is_active !== false));
       setPatients(Array.isArray(directory?.patients) ? directory.patients : []);
       setNurses(Array.isArray(directory?.nurses) ? directory.nurses : []);
+      setTherapistAssignments(therapistAssignmentData.filter((item) => item.is_active !== false));
       setHistories(extractList(historyRes.data));
       setError('');
     } catch (err) {
@@ -78,6 +84,39 @@ export const NursePatientsPage = () => {
   const activePatientIds = useMemo(
     () => new Set(assignments.map((assignment) => assignment.patient)),
     [assignments],
+  );
+
+  const therapistByPatientId = useMemo(() => {
+    const map = new Map();
+    therapistAssignments.forEach((assignment) => {
+      const patientId = assignment.patient;
+      const therapist = assignment.therapist_details;
+      if (!map.has(patientId)) {
+        map.set(patientId, []);
+      }
+      map.get(patientId).push(therapist);
+    });
+    return map;
+  }, [therapistAssignments]);
+
+  const therapistAssignedPatientIds = useMemo(
+    () => new Set(therapistAssignments.map((assignment) => assignment.patient)),
+    [therapistAssignments],
+  );
+
+  const visiblePatientsForNurse = useMemo(() => {
+    if (isAdmin) return patients;
+    return patients.filter((patient) => therapistAssignedPatientIds.has(patient.id));
+  }, [isAdmin, patients, therapistAssignedPatientIds]);
+
+  const visibleAssignments = useMemo(
+    () => (showAllAssignments ? assignments : assignments.slice(0, 5)),
+    [assignments, showAllAssignments],
+  );
+
+  const visiblePatients = useMemo(
+    () => (showAllPatients ? visiblePatientsForNurse : visiblePatientsForNurse.slice(0, 5)),
+    [showAllPatients, visiblePatientsForNurse],
   );
 
   const refreshHistoryForm = (history) => {
@@ -178,7 +217,7 @@ export const NursePatientsPage = () => {
           <h1 className="mt-1 text-3xl md:text-4xl font-bold text-palette-dark">Patients & Medical Histories</h1>
           <p className="mt-2 text-palette-dark/70 max-w-2xl">Assign patients, create or update medical histories, and coordinate care with therapists.</p>
         </div>
-        <div className="glass-panel-strong rounded-2xl px-4 py-3 text-sm text-palette-dark/70">
+        <div className="glass-panel rounded-2xl px-4 py-3 text-sm text-palette-dark/70 border border-palette-mauve/15">
           {isAdmin ? 'Admin: manage any nurse assignment' : 'Manage assigned patients and histories'}
         </div>
       </section>
@@ -187,48 +226,65 @@ export const NursePatientsPage = () => {
       {success && <Alert type="success" message={success} onClose={() => setSuccess('')} />}
 
       <Card>
-        <h2 className="text-2xl font-bold text-palette-dark mb-4">Assign a Patient</h2>
-        <form onSubmit={handleAssign} className="flex flex-col md:flex-row gap-4 items-end">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-palette-dark/45">Patient assignment</p>
+            <h2 className="mt-2 text-2xl font-bold text-palette-dark">Assign a Patient</h2>
+            <p className="mt-2 text-sm text-palette-dark/70 max-w-2xl">
+              Assign a patient to a nurse so the care team can manage histories, notes, and appointments in one place.
+            </p>
+          </div>
+          <div className="rounded-2xl bg-palette-blush/25 px-4 py-3 text-sm text-palette-dark/70">
+            {isAdmin ? 'Admin: choose the nurse and patient' : 'Nurse: choose an assigned patient'}
+          </div>
+        </div>
+
+        <form onSubmit={handleAssign} className="mt-6 grid gap-4 lg:grid-cols-2">
           {isAdmin && (
-            <div className="flex-1 w-full">
-              <Select
-                label="Nurse"
-                value={assignmentNurseId}
-                onChange={(event) => setAssignmentNurseId(event.target.value)}
-              >
-                <option value="">Select a nurse</option>
-                {nurses.map((nurse) => (
-                  <option key={nurse.id} value={nurse.id}>
-                    {nurse.first_name} {nurse.last_name} ({nurse.email})
-                  </option>
-                ))}
-              </Select>
-            </div>
-          )}
-          <div className="flex-1 w-full">
             <Select
-              label="Patient"
-              value={assignmentPatientId}
-              onChange={(event) => setAssignmentPatientId(event.target.value)}
+              label="Nurse"
+              value={assignmentNurseId}
+              onChange={(event) => setAssignmentNurseId(event.target.value)}
+              className="mb-0"
             >
-              <option value="">Select a patient</option>
-              {patients.map((patient) => (
-                <option key={patient.id} value={patient.id}>
-                  {patient.first_name} {patient.last_name} ({patient.email})
+              <option value="">Select a nurse</option>
+              {nurses.map((nurse) => (
+                <option key={nurse.id} value={nurse.id}>
+                  {nurse.first_name} {nurse.last_name} ({nurse.email})
                 </option>
               ))}
             </Select>
+          )}
+
+          <Select
+            label="Patient"
+            value={assignmentPatientId}
+            onChange={(event) => setAssignmentPatientId(event.target.value)}
+            className="mb-0"
+          >
+            <option value="">Select a patient</option>
+            {visiblePatientsForNurse.map((patient) => (
+              <option key={patient.id} value={patient.id}>
+                {patient.first_name} {patient.last_name} ({patient.email})
+              </option>
+            ))}
+          </Select>
+
+          <div className="lg:col-span-2 flex justify-end pt-2">
+            <Button type="submit" variant="primary">Assign Patient</Button>
           </div>
-          <Button type="submit" variant="primary">Assign</Button>
         </form>
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <h2 className="text-2xl font-bold text-palette-dark mb-4">Assigned Patients</h2>
+          <p className="mb-3 text-sm text-palette-dark/60">
+            Showing {visibleAssignments.length} of {assignments.length} assigned patients.
+          </p>
           <div className="space-y-4">
-            {assignments.map((assignment) => (
-              <div key={assignment.id} className="rounded-lg border border-palette-cream/60 p-4">
+            {visibleAssignments.map((assignment) => (
+              <div key={assignment.id} className="rounded-2xl border border-palette-mauve/20 bg-white/70 p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     {isAdmin && assignment.nurse_details && (
@@ -240,6 +296,16 @@ export const NursePatientsPage = () => {
                       {assignment.patient_details?.first_name} {assignment.patient_details?.last_name}
                     </p>
                     <p className="text-sm text-palette-dark/70">{assignment.patient_details?.email}</p>
+                    <p className="text-xs text-palette-dark/60 mt-1">
+                      Therapist:{' '}
+                      {therapistByPatientId.get(assignment.patient)?.length
+                        ? therapistByPatientId
+                            .get(assignment.patient)
+                            .map((therapist) => `${therapist?.first_name || ''} ${therapist?.last_name || ''}`.trim())
+                            .filter(Boolean)
+                            .join(', ')
+                        : 'Not assigned'}
+                    </p>
                   </div>
                   <Button variant="ghost" onClick={() => handleDeactivate(assignment.id)}>
                     Deactivate
@@ -248,18 +314,26 @@ export const NursePatientsPage = () => {
               </div>
             ))}
             {assignments.length === 0 && <p className="text-palette-dark/70">No patients assigned yet.</p>}
+            {assignments.length > 5 && (
+              <Button variant="ghost" onClick={() => setShowAllAssignments((value) => !value)}>
+                {showAllAssignments ? 'Show fewer' : `Show all ${assignments.length}`}
+              </Button>
+            )}
           </div>
         </Card>
 
         <Card>
           <h2 className="text-2xl font-bold text-palette-dark mb-4">Medical Histories</h2>
+          <p className="mb-3 text-sm text-palette-dark/60">
+            Showing {visiblePatients.length} of {patients.length} patients with their history status.
+          </p>
           <div className="space-y-4">
-            {patients.map((patient) => {
+            {visiblePatients.map((patient) => {
               const history = histories.find((item) => item.patient === patient.id);
               const isAssigned = activePatientIds.has(patient.id);
 
               return (
-                <div key={patient.id} className="rounded-lg border border-palette-cream/60 p-4">
+                <div key={patient.id} className="rounded-2xl border border-palette-mauve/20 bg-white/70 p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="font-semibold text-palette-dark">
@@ -268,6 +342,16 @@ export const NursePatientsPage = () => {
                       <p className="text-sm text-palette-dark/70">{patient.email}</p>
                       <p className="text-xs text-palette-dark/60 mt-1">
                         {history ? 'Medical history exists' : 'No medical history yet'}
+                      </p>
+                      <p className="text-xs text-palette-dark/60 mt-1">
+                        Therapist:{' '}
+                        {therapistByPatientId.get(patient.id)?.length
+                          ? therapistByPatientId
+                              .get(patient.id)
+                              .map((therapist) => `${therapist?.first_name || ''} ${therapist?.last_name || ''}`.trim())
+                              .filter(Boolean)
+                              .join(', ')
+                          : 'Not assigned'}
                       </p>
                     </div>
                     <Button
@@ -286,6 +370,12 @@ export const NursePatientsPage = () => {
                 </div>
               );
             })}
+            {visiblePatientsForNurse.length === 0 && <p className="text-palette-dark/70">No therapist-assigned patients found.</p>}
+            {visiblePatientsForNurse.length > 5 && (
+              <Button variant="ghost" onClick={() => setShowAllPatients((value) => !value)}>
+                {showAllPatients ? 'Show fewer' : `Show all ${visiblePatientsForNurse.length}`}
+              </Button>
+            )}
           </div>
         </Card>
       </div>

@@ -233,7 +233,7 @@ export const HomePage = () => {
         <Card>
           <h3 className="text-xl font-bold text-palette-dark mb-3">Nurse Management</h3>
           <p className="text-palette-dark/60 mb-4">Review nurse-led patient care and appointments</p>
-          <Link to="/nurse/dashboard">
+          <Link to="/nurse">
             <Button variant="primary" className="w-full">Open Nurse Tools</Button>
           </Link>
         </Card>

@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Input, Button, Select } from '../components/FormElements';
 import { Alert } from '../components/Alert';
+import { AuthPageLayout } from '../components/AuthPageLayout';
 import logo from '../assets/logo.png';
 
 export const RegisterPage = () => {
@@ -54,14 +55,16 @@ export const RegisterPage = () => {
     });
 
     if (success) {
-      navigate('/login');
+      navigate('/login', {
+        state: {
+          message: 'Registration successful. Check your email to verify your account before logging in.',
+        },
+      });
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-palette-beige to-palette-mauve flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-palette-cream rounded-lg shadow-lg p-8">
+    <AuthPageLayout>
           <div className="flex justify-center mb-8">
             <img src={logo} alt="HealMe Logo" className="h-12 w-auto" />
           </div>
@@ -131,7 +134,7 @@ export const RegisterPage = () => {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   name="password"
-                  className="w-full px-4 py-2 border border-palette-cream/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-palette-mauve focus:border-transparent"
+                  className="input-field"
                   value={formData.password}
                   onChange={handleChange}
                   disabled={loading}
@@ -153,7 +156,7 @@ export const RegisterPage = () => {
                 <input
                   type={showPasswordConfirm ? 'text' : 'password'}
                   name="password_confirm"
-                  className="w-full px-4 py-2 border border-palette-cream/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-palette-mauve focus:border-transparent"
+                  className="input-field"
                   value={formData.password_confirm}
                   onChange={handleChange}
                   disabled={loading}
@@ -179,6 +182,10 @@ export const RegisterPage = () => {
             </Button>
           </form>
 
+          <p className="mt-4 text-sm text-palette-dark/60 text-center">
+            We will send a verification link to your inbox after registration.
+          </p>
+
           <div className="mt-6 text-center">
             <p className="text-palette-dark/70">
               Already have an account?{' '}
@@ -187,8 +194,6 @@ export const RegisterPage = () => {
               </Link>
             </p>
           </div>
-        </div>
-      </div>
-    </div>
+    </AuthPageLayout>
   );
 };

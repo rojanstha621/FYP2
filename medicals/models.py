@@ -82,6 +82,8 @@ class NursePatientAssignment(models.Model):
         limit_choices_to={"role": "PATIENT"},
     )
 
+    note = models.TextField(blank=True)
+
     assigned_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
 
@@ -100,6 +102,7 @@ class Appointment(models.Model):
         SCHEDULED = "SCHEDULED", "Scheduled"
         CONFIRMED = "CONFIRMED", "Confirmed"
         COMPLETED = "COMPLETED", "Completed"
+        CHECKED_IN = "CHECKED_IN", "Checked-in"
         CANCELLED = "CANCELLED", "Cancelled"
 
     class TypeChoices(models.TextChoices):
@@ -130,6 +133,16 @@ class Appointment(models.Model):
         null=True,
         blank=True,
         limit_choices_to={"role": "THERAPIST"},
+    )
+
+    doctor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="doctor_appointments",
+        null=True,
+        blank=True,
+        limit_choices_to={"role": "DOCTOR"},
+        help_text="Optional doctor assigned to this appointment",
     )
 
     title = models.CharField(max_length=255)
@@ -203,8 +216,78 @@ class Appointment(models.Model):
             if not therapist_assignment_exists:
                 raise ValidationError({"therapist": "Therapist is not assigned to this patient."})
 
+        if self.doctor:
+            if getattr(self.doctor, "role", None) != "DOCTOR":
+                raise ValidationError({"doctor": "Assigned user must be a doctor."})
+
         if self.duration_minutes < 1:
             raise ValidationError({"duration_minutes": "Duration must be at least 1 minute."})
+
+
+class Vitals(models.Model):
+    patient = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="vitals"
+    )
+    nurse = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="recorded_vitals",
+        limit_choices_to={"role": "NURSE"},
+    )
+    systolic = models.PositiveIntegerField(null=True, blank=True)
+    diastolic = models.PositiveIntegerField(null=True, blank=True)
+    temperature_c = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True)
+    pulse = models.PositiveIntegerField(null=True, blank=True)
+    respiration_rate = models.PositiveIntegerField(null=True, blank=True)
+    weight_kg = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    recorded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Vitals"
+        verbose_name_plural = "Vitals"
+        ordering = ["-recorded_at"]
+
+    def __str__(self):
+        return f"Vitals - {self.patient.email} @ {self.recorded_at:%Y-%m-%d %H:%M}"
+
+
+class NursingNote(models.Model):
+    class NoteType(models.TextChoices):
+        NOTE = "NOTE", "Note"
+        FOLLOW_UP = "FOLLOW_UP", "Follow-up"
+        INSTRUCTION = "INSTRUCTION", "Instruction"
+
+    patient = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="nursing_notes"
+    )
+    nurse = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="nursing_notes_created",
+        limit_choices_to={"role": "NURSE"},
+    )
+    appointment = models.ForeignKey(
+        "Appointment",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="nursing_notes",
+    )
+    note_type = models.CharField(max_length=20, choices=NoteType.choices, default=NoteType.NOTE)
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Nursing Note"
+        verbose_name_plural = "Nursing Notes"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.get_note_type_display()} - {self.patient.email} @ {self.created_at:%Y-%m-%d}"
 
 
 class TherapistPatientAssignment(models.Model):

@@ -1,16 +1,19 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Input, Button } from '../components/FormElements';
 import { Alert } from '../components/Alert';
+import { AuthPageLayout } from '../components/AuthPageLayout';
 import logo from '../assets/logo.png';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, error, loading } = useAuth();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState('');
+  const [localInfo, setLocalInfo] = useState(location.state?.message || '');
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -32,17 +35,19 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-palette-beige to-palette-mauve flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-palette-cream rounded-lg shadow-lg p-8">
+    <AuthPageLayout>
           <div className="flex justify-center mb-8">
             <img src={logo} alt="HealMe Logo" className="h-12 w-auto" />
           </div>
 
           <h2 className="text-2xl font-bold text-palette-dark mb-6 text-center">Login</h2>
 
-          {(error || localError) && (
+          {(localInfo || error || localError) && (
+            localInfo ? (
+              <Alert type="success" message={localInfo} onClose={() => setLocalInfo('')} />
+            ) : (
             <Alert type="error" message={error || localError} onClose={() => setLocalError('')} />
+            )
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -61,7 +66,7 @@ export const LoginPage = () => {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   name="password"
-                  className="w-full px-4 py-2 border border-palette-cream/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-palette-mauve focus:border-transparent"
+                  className="input-field"
                   value={formData.password}
                   onChange={handleChange}
                   disabled={loading}
@@ -86,6 +91,10 @@ export const LoginPage = () => {
             </Button>
           </form>
 
+          <p className="mt-4 text-sm text-palette-dark/60 text-center">
+            If you just registered, open the verification email first and then return here.
+          </p>
+
           <div className="mt-6 text-center">
             <p className="text-palette-dark/70">
               Don't have an account?{' '}
@@ -102,8 +111,6 @@ export const LoginPage = () => {
             <p className="text-sm text-palette-dark/60">Nurse: nurse@example.com / password</p>
             <p className="text-sm text-palette-dark/60">Admin: admin@example.com / password</p>
           </div> */}
-        </div>
-      </div>
-    </div>
+    </AuthPageLayout>
   );
 };

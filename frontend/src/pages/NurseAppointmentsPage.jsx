@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { nurseAPI } from '../services/api';
+import { assignmentAPI, nurseAPI } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import { Card, Button, Input, Select, Textarea } from '../components/FormElements';
 import { Alert } from '../components/Alert';
@@ -25,6 +25,7 @@ export const NurseAppointmentsPage = () => {
   const [appointments, setAppointments] = useState([]);
   const [users, setUsers] = useState([]);
   const [assignments, setAssignments] = useState([]);
+  const [therapistAssignments, setTherapistAssignments] = useState([]);
   const [formData, setFormData] = useState(emptyForm);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -47,10 +48,11 @@ export const NurseAppointmentsPage = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [appointmentsRes, directoryRes, assignmentsRes] = await Promise.all([
+      const [appointmentsRes, directoryRes, assignmentsRes, therapistAssignmentRes] = await Promise.all([
         nurseAPI.getAppointments(),
         nurseAPI.getDirectory(),
         nurseAPI.getAssignments(),
+        assignmentAPI.getAssignments(),
       ]);
 
       setAppointments(extractList(appointmentsRes.data));
@@ -61,6 +63,7 @@ export const NurseAppointmentsPage = () => {
         ...(Array.isArray(directory?.therapists) ? directory.therapists : []),
       ]);
       setAssignments(extractList(assignmentsRes.data).filter((assignment) => assignment.is_active !== false));
+      setTherapistAssignments(extractList(therapistAssignmentRes.data).filter((assignment) => assignment.is_active !== false));
       setError('');
     } catch (err) {
       setError('Failed to load appointments');
@@ -71,8 +74,14 @@ export const NurseAppointmentsPage = () => {
 
   const assignedPatients = useMemo(() => {
     const assignedPatientIds = new Set(assignments.map((assignment) => assignment.patient));
-    return users.filter((user) => user.role === 'PATIENT' && assignedPatientIds.has(user.id));
-  }, [assignments, users]);
+    const therapistAssignedPatientIds = new Set(therapistAssignments.map((assignment) => assignment.patient));
+    return users.filter(
+      (user) =>
+        user.role === 'PATIENT' &&
+        assignedPatientIds.has(user.id) &&
+        therapistAssignedPatientIds.has(user.id),
+    );
+  }, [assignments, therapistAssignments, users]);
 
   const approvedTherapists = useMemo(
     () => users.filter((user) => user.role === 'THERAPIST' && user.therapist_status === 'APPROVED'),
@@ -83,6 +92,43 @@ export const NurseAppointmentsPage = () => {
     () => users.filter((entry) => entry.role === 'NURSE'),
     [users],
   );
+
+  const therapistByPatientId = useMemo(() => {
+    const map = new Map();
+    therapistAssignments.forEach((assignment) => {
+      const patientId = assignment.patient;
+      const therapist = assignment.therapist_details;
+      if (!map.has(patientId)) {
+        map.set(patientId, []);
+      }
+      map.get(patientId).push(therapist);
+    });
+    return map;
+  }, [therapistAssignments]);
+
+  const patientsForSelectedTherapist = useMemo(() => {
+    if (!formData.therapist) {
+      return assignedPatients;
+    }
+
+    return assignedPatients.filter((patient) =>
+      therapistAssignments.some(
+        (assignment) =>
+          assignment.patient === patient.id &&
+          String(assignment.therapist) === String(formData.therapist) &&
+          assignment.is_active !== false,
+      ),
+    );
+  }, [assignedPatients, formData.therapist, therapistAssignments]);
+
+  useEffect(() => {
+    if (!formData.patient) return;
+
+    const stillVisible = patientsForSelectedTherapist.some((patient) => patient.id === formData.patient);
+    if (!stillVisible) {
+      setFormData((current) => ({ ...current, patient: '' }));
+    }
+  }, [formData.patient, patientsForSelectedTherapist]);
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -139,7 +185,7 @@ export const NurseAppointmentsPage = () => {
           <h1 className="mt-1 text-3xl md:text-4xl font-bold text-palette-dark">Schedule & Manage</h1>
           <p className="mt-2 text-palette-dark/70 max-w-2xl">Create nurse-led appointments, coordinate with therapists, and manage patient schedules.</p>
         </div>
-        <div className="glass-panel-strong rounded-2xl px-4 py-3 text-sm text-palette-dark/70">
+        <div className="glass-panel rounded-2xl px-4 py-3 text-sm text-palette-dark/70 border border-palette-mauve/15">
           {isAdmin ? 'Admin mode: create on behalf of any nurse' : 'Create appointments for your assigned patients'}
         </div>
       </section>
@@ -162,12 +208,25 @@ export const NurseAppointmentsPage = () => {
           )}
           <Select name="patient" label="Patient" value={formData.patient} onChange={handleChange}>
             <option value="">Select a patient</option>
-            {assignedPatients.map((patient) => (
+            {patientsForSelectedTherapist.map((patient) => (
               <option key={patient.id} value={patient.id}>
                 {patient.first_name} {patient.last_name} ({patient.email})
+                {therapistByPatientId.get(patient.id)?.length
+                  ? ` — therapist: ${therapistByPatientId
+                      .get(patient.id)
+                      .map((therapist) => `${therapist?.first_name || ''} ${therapist?.last_name || ''}`.trim())
+                      .filter(Boolean)
+                      .join(', ')}`
+                  : ' — therapist: not assigned'}
               </option>
             ))}
           </Select>
+
+          <div className="md:col-span-2 text-xs text-palette-dark/60 -mt-2">
+            {formData.therapist
+              ? 'Patient list is filtered to patients assigned to the selected therapist.'
+              : 'Select a therapist to filter patients to only those assigned to that therapist.'}
+          </div>
 
           <Select name="therapist" label="Therapist (optional)" value={formData.therapist} onChange={handleChange}>
             <option value="">No therapist</option>
@@ -204,7 +263,7 @@ export const NurseAppointmentsPage = () => {
           />
 
           <Input name="location" label="Location" value={formData.location} onChange={handleChange} placeholder="Room 203 / Telehealth" />
-          <label className="flex items-center gap-3 rounded-lg border border-palette-cream/40 px-4 py-3 text-sm text-palette-dark">
+          <label className="flex items-center gap-3 rounded-2xl border border-palette-mauve/20 bg-white/70 px-4 py-3 text-sm text-palette-dark">
             <input
               type="checkbox"
               name="is_virtual"
@@ -247,7 +306,7 @@ export const NurseAppointmentsPage = () => {
               </div>
 
               <div className="flex items-center gap-3">
-                <span className="rounded-full bg-palette-cream px-3 py-1 text-sm font-medium text-palette-dark">
+                <span className="rounded-full bg-white/70 px-3 py-1 text-sm font-medium text-palette-dark border border-palette-mauve/20">
                   {appointment.status}
                 </span>
                 {appointment.status !== 'CANCELLED' && (

@@ -5,6 +5,8 @@ from .views import (
     TherapistPatientAssignmentViewSet,
     NursePatientAssignmentViewSet,
     AppointmentViewSet,
+    VitalsViewSet,
+    NursingNoteViewSet,
     PatientDashboardView,
     AssignmentRequestView,
     PendingAssignmentsView,
@@ -19,6 +21,8 @@ router.register(
 )
 router.register(r"nurse-assignments", NursePatientAssignmentViewSet, basename="nurse-assignment")
 router.register(r"appointments", AppointmentViewSet, basename="appointment")
+router.register(r"vitals", VitalsViewSet, basename="vitals")
+router.register(r"nursing-notes", NursingNoteViewSet, basename="nursingnote")
 
 app_name = "medicals"
 

@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { adminAPI } from '../services/api';
 import { Card, Button, Select, Input } from '../components/FormElements';
 import { Alert } from '../components/Alert';
 import { Spinner } from '../components/Spinner';
 
 export const AdminUsersPage = () => {
+  const location = useLocation();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -16,6 +18,14 @@ export const AdminUsersPage = () => {
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const role = params.get('role');
+    if (role && ['ADMIN', 'PATIENT', 'THERAPIST', 'NURSE'].includes(role)) {
+      setRoleFilter(role);
+    }
+  }, [location.search]);
 
   const extractList = (payload) => {
     if (Array.isArray(payload)) return payload;
@@ -100,7 +110,10 @@ export const AdminUsersPage = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold text-palette-dark mb-8">User Management</h1>
+      <div className="glass-panel rounded-[2rem] p-6 md:p-8 mb-8">
+        <p className="text-xs font-bold uppercase tracking-[0.24em] text-palette-dark/50">Admin workspace</p>
+        <h1 className="mt-2 text-4xl font-bold text-palette-dark">User Management</h1>
+      </div>
 
       {error && <Alert type="error" message={error} onClose={() => setError('')} />}
       {success && <Alert type="success" message={success} onClose={() => setSuccess('')} />}
@@ -125,9 +138,9 @@ export const AdminUsersPage = () => {
         </div>
       </Card>
 
-      <div className="overflow-x-auto">
+      <div className="glass-panel rounded-3xl border border-palette-mauve/15 overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-palette-cream border-b border-palette-cream/40">
+          <thead className="bg-white/70 border-b border-palette-mauve/20">
             <tr>
               <th className="text-left py-3 px-4 font-semibold text-palette-dark/80">Name</th>
               <th className="text-left py-3 px-4 font-semibold text-palette-dark/80">Email</th>
@@ -139,7 +152,7 @@ export const AdminUsersPage = () => {
           </thead>
           <tbody>
             {filteredUsers.map((user) => (
-              <tr key={user.id} className="border-b border-palette-cream/30 hover:bg-palette-cream/95">
+              <tr key={user.id} className="border-b border-palette-mauve/10 hover:bg-white/70">
                 <td className="py-3 px-4 text-palette-dark font-medium">
                   {user.first_name} {user.last_name}
                 </td>
@@ -255,7 +268,7 @@ export const AdminUsersPage = () => {
             </div>
 
             {selectedUser.role === 'THERAPIST' && (
-              <div className="mb-6 p-4 bg-palette-beige rounded">
+              <div className="mb-6 p-4 bg-white/70 border border-palette-mauve/20 rounded-2xl">
                 <h3 className="text-sm font-semibold mb-3">Therapist Approval</h3>
                 <div className="flex gap-2">
                   {selectedUser.therapist_status !== 'APPROVED' && (

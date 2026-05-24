@@ -21,6 +21,23 @@ const buildUserWithProfile = (payload) => {
   };
 };
 
+const extractErrorMessage = (err, fallback) => {
+  const data = err?.response?.data;
+  if (!data) return fallback;
+
+  if (typeof data === 'string') return data;
+  if (data.detail) return data.detail;
+  if (data.message) return data.message;
+
+  const firstValue = Object.values(data).find((value) => value);
+  if (Array.isArray(firstValue) && firstValue.length > 0) {
+    return firstValue[0];
+  }
+  if (typeof firstValue === 'string') return firstValue;
+
+  return fallback;
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -71,7 +88,7 @@ export const AuthProvider = ({ children }) => {
       await fetchCurrentUser();
       return true;
     } catch (err) {
-      const message = err.response?.data?.detail || err.response?.data?.message || 'Login failed';
+      const message = extractErrorMessage(err, 'Login failed');
       setError(message);
       return false;
     } finally {
@@ -86,7 +103,7 @@ export const AuthProvider = ({ children }) => {
       await authAPI.register(data);
       return true;
     } catch (err) {
-      const message = err.response?.data?.detail || 'Registration failed';
+      const message = extractErrorMessage(err, 'Registration failed');
       setError(message);
       return false;
     } finally {

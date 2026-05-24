@@ -96,8 +96,17 @@ export default function TherapistOverviewPage() {
               Track patient video schedule performance from one dashboard.
             </p>
           </div>
-          <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-palette-cream/80 border border-palette-mauve/20 text-palette-dark/80 text-sm">
-            <FiUsers /> {patients.length} assigned patients
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-palette-cream/80 border border-palette-mauve/20 text-palette-dark/80 text-sm">
+              <FiUsers /> {patients.length} assigned patients
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/therapist/nurse-assignments')}
+              className="btn-primary"
+            >
+              Assign a Nurse
+            </button>
           </div>
         </div>
       </section>
@@ -116,20 +125,20 @@ export default function TherapistOverviewPage() {
           return (
             <div
               key={patient.patient_id}
-              className="rounded-2xl p-5 text-left shadow-sm border bg-palette-cream border-palette-mauve/20"
+              className="glass-panel rounded-3xl p-5 text-left border border-palette-mauve/15"
             >
               <div className="flex items-center justify-between gap-2">
                 <h2 className="text-lg font-semibold text-palette-dark">{patient.patient_name}</h2>
                 {!patient.is_active && (
-                  <span className="text-xs px-2 py-1 rounded-full bg-palette-beige text-palette-dark/70">Inactive</span>
+                  <span className="text-xs px-2 py-1 rounded-full bg-palette-beige/70 text-palette-dark/70">Inactive</span>
                 )}
               </div>
 
               {patient.email && <p className="text-sm text-palette-dark/70 mt-1">{patient.email}</p>}
 
               <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                <div className="rounded-lg bg-palette-cream/80 p-2 text-palette-dark/80">Videos: <span className="font-semibold">{video.assignmentsTotal}</span></div>
-                <div className="rounded-lg bg-palette-cream/80 p-2 text-palette-dark/80">Scheduled: <span className="font-semibold">{video.scheduledAssignments}</span></div>
+                <div className="rounded-lg bg-white/70 p-2 text-palette-dark/80">Videos: <span className="font-semibold">{video.assignmentsTotal}</span></div>
+                <div className="rounded-lg bg-white/70 p-2 text-palette-dark/80">Scheduled: <span className="font-semibold">{video.scheduledAssignments}</span></div>
               </div>
 
               <div className="mt-3">
@@ -162,7 +171,7 @@ export default function TherapistOverviewPage() {
       </div>
 
       {patients.length === 0 && (
-        <div className="rounded-2xl bg-palette-cream p-5 shadow-sm border border-palette-mauve/20 text-palette-dark/70">
+        <div className="glass-panel rounded-3xl p-5 border border-palette-mauve/15 text-palette-dark/70">
           No assigned patients found.
         </div>
       )}

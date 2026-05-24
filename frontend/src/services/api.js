@@ -72,6 +72,7 @@ apiClient.interceptors.response.use(
 // Auth API
 export const authAPI = {
   register: (data) => apiClient.post('/api/account/register/', data),
+  verifyEmail: (data) => apiClient.post('/api/account/verify-email/', data),
   login: (email, password) =>
     apiClient.post('/api/account/login/', { email, password }),
   logout: (refreshToken) =>
@@ -117,6 +118,20 @@ export const nurseAPI = {
   createAppointment: (data) => apiClient.post('/api/medicals/appointments/', data),
   updateAppointment: (id, data) => apiClient.patch(`/api/medicals/appointments/${id}/`, data),
   cancelAppointment: (id) => apiClient.delete(`/api/medicals/appointments/${id}/`),
+  checkInAppointment: (id) => apiClient.patch(`/api/medicals/appointments/${id}/check-in/`),
+  assignDoctor: (id, doctorId) => apiClient.patch(`/api/medicals/appointments/${id}/assign-doctor/`, { doctor: doctorId }),
+};
+
+// Vitals API
+export const vitalsAPI = {
+  getVitals: (params) => apiClient.get('/api/medicals/vitals/', { params }),
+  createVitals: (data) => apiClient.post('/api/medicals/vitals/', data),
+};
+
+// Nursing notes / follow-ups
+export const nursingNotesAPI = {
+  getNotes: (params) => apiClient.get('/api/medicals/nursing-notes/', { params }),
+  createNote: (data) => apiClient.post('/api/medicals/nursing-notes/', data),
 };
 
 // Therapist-Patient Assignment API

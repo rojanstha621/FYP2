@@ -71,7 +71,10 @@ export default function AdminPendingAssignmentsPage() {
 
   return (
       <div className="max-w-7xl mx-auto px-4 py-6">
-        <h1 className="text-3xl font-bold text-palette-dark mb-6">Pending Assignment Requests</h1>
+        <div className="glass-panel rounded-[2rem] p-6 md:p-8 mb-6">
+          <p className="text-xs font-bold uppercase tracking-[0.24em] text-palette-dark/50">Admin workspace</p>
+          <h1 className="mt-2 text-3xl font-bold text-palette-dark">Pending Assignment Requests</h1>
+        </div>
 
         {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
         {success && <Alert type="success" message={success} onClose={() => setSuccess(null)} />}
@@ -79,7 +82,7 @@ export default function AdminPendingAssignmentsPage() {
         {loading ? (
           <Spinner />
         ) : (
-          <div className="bg-palette-cream rounded-lg shadow border border-palette-mauve/20 divide-y divide-palette-mauve/20">
+          <div className="glass-panel rounded-3xl border border-palette-mauve/15 divide-y divide-palette-mauve/20">
             {assignments.length ? (
               assignments.map((a) => (
                 <div key={a.id} className="p-4 flex items-center justify-between hover:bg-palette-beige/30 transition-colors">
@@ -105,7 +108,7 @@ export default function AdminPendingAssignmentsPage() {
                     <button
                       onClick={() => handleReject(a.id)}
                       disabled={rejecting === a.id || activating === a.id}
-                      className="rounded-lg px-4 py-2 text-sm font-medium text-red-700 border border-red-300 bg-red-50 hover:bg-red-100 disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="btn-danger"
                     >
                       {rejecting === a.id ? 'Rejecting...' : 'Reject'}
                     </button>

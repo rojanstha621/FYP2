@@ -1,5 +1,12 @@
 from rest_framework import serializers
-from .models import MedicalHistory, NursePatientAssignment, TherapistPatientAssignment, Appointment
+from .models import (
+    MedicalHistory,
+    NursePatientAssignment,
+    TherapistPatientAssignment,
+    Appointment,
+    Vitals,
+    NursingNote,
+)
 from account.serializers import UserBasicSerializer
 
 
@@ -89,6 +96,7 @@ class NursePatientAssignmentSerializer(serializers.ModelSerializer):
             "nurse_details",
             "patient",
             "patient_details",
+            "note",
             "assigned_at",
             "is_active",
         ]
@@ -116,6 +124,18 @@ class NursePatientAssignmentSerializer(serializers.ModelSerializer):
 
         if existing.exists():
             raise serializers.ValidationError("This nurse is already assigned to this patient.")
+
+        active_for_patient = NursePatientAssignment.objects.filter(
+            patient=patient,
+            is_active=True,
+        )
+        if self.instance:
+            active_for_patient = active_for_patient.exclude(id=self.instance.id)
+
+        if active_for_patient.exists():
+            raise serializers.ValidationError(
+                "This patient already has an active nurse assignment."
+            )
 
         return attrs
 
@@ -209,6 +229,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
     nurse_details = UserBasicSerializer(source="nurse", read_only=True)
     patient_details = UserBasicSerializer(source="patient", read_only=True)
     therapist_details = UserBasicSerializer(source="therapist", read_only=True)
+    doctor_details = UserBasicSerializer(source="doctor", read_only=True)
     created_by_details = UserBasicSerializer(source="created_by", read_only=True)
 
     class Meta:
@@ -221,6 +242,8 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "patient_details",
             "therapist",
             "therapist_details",
+            "doctor",
+            "doctor_details",
             "title",
             "appointment_type",
             "scheduled_for",
@@ -245,6 +268,7 @@ class AppointmentCreateSerializer(serializers.ModelSerializer):
             "nurse",
             "patient",
             "therapist",
+            "doctor",
             "title",
             "appointment_type",
             "scheduled_for",
@@ -301,6 +325,11 @@ class AppointmentCreateSerializer(serializers.ModelSerializer):
         if attrs.get("duration_minutes", 30) < 1:
             raise serializers.ValidationError({"duration_minutes": "Duration must be at least 1 minute."})
 
+        # Doctor role check (optional)
+        doctor = attrs.get("doctor")
+        if doctor and getattr(doctor, "role", None) != "DOCTOR":
+            raise serializers.ValidationError({"doctor": "Assigned user must be a doctor."})
+
         return attrs
 
     def create(self, validated_data):
@@ -310,3 +339,55 @@ class AppointmentCreateSerializer(serializers.ModelSerializer):
             validated_data["nurse"] = user
         validated_data["created_by"] = user
         return super().create(validated_data)
+
+
+class VitalsSerializer(serializers.ModelSerializer):
+    nurse_details = UserBasicSerializer(source="nurse", read_only=True)
+    patient_details = UserBasicSerializer(source="patient", read_only=True)
+
+    class Meta:
+        model = Vitals
+        fields = [
+            "id",
+            "patient",
+            "patient_details",
+            "nurse",
+            "nurse_details",
+            "systolic",
+            "diastolic",
+            "temperature_c",
+            "pulse",
+            "respiration_rate",
+            "weight_kg",
+            "recorded_at",
+        ]
+        read_only_fields = ["id", "recorded_at"]
+
+
+class NursingNoteSerializer(serializers.ModelSerializer):
+    nurse_details = UserBasicSerializer(source="nurse", read_only=True)
+    patient_details = UserBasicSerializer(source="patient", read_only=True)
+
+    class Meta:
+        model = NursingNote
+        fields = [
+            "id",
+            "patient",
+            "patient_details",
+            "nurse",
+            "nurse_details",
+            "appointment",
+            "note_type",
+            "text",
+            "created_at",
+        ]
+        read_only_fields = ["id", "created_at"]
+
+    def validate(self, attrs):
+        nurse = attrs.get("nurse")
+        patient = attrs.get("patient")
+        if nurse and getattr(nurse, "role", None) != "NURSE":
+            raise serializers.ValidationError({"nurse": "Assigned user must be a nurse."})
+        if patient and getattr(patient, "role", None) != "PATIENT":
+            raise serializers.ValidationError({"patient": "Assigned user must be a patient."})
+        return attrs

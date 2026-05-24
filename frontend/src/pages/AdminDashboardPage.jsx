@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { adminAPI } from '../services/api';
 import { Card, Button } from '../components/FormElements';
 import { Spinner } from '../components/Spinner';
@@ -92,17 +93,21 @@ export const AdminDashboardPage = () => {
         <Card>
           <h3 className="text-lg font-bold text-palette-dark mb-2">Patients</h3>
           <p className="text-3xl font-bold text-palette-mauve mb-4">{stats.patients}</p>
-          <Button variant="ghost" className="text-sm w-full">
-            View All Patients
-          </Button>
+          <Link to="/admin/users?role=PATIENT" className="block">
+            <Button variant="ghost" className="text-sm w-full">
+              View All Patients
+            </Button>
+          </Link>
         </Card>
 
         <Card>
           <h3 className="text-lg font-bold text-palette-dark mb-2">Therapists</h3>
           <p className="text-3xl font-bold text-green-600 mb-4">{stats.therapists}</p>
-          <Button variant="ghost" className="text-sm w-full">
-            View All Therapists
-          </Button>
+          <Link to="/admin/users?role=THERAPIST" className="block">
+            <Button variant="ghost" className="text-sm w-full">
+              View All Therapists
+            </Button>
+          </Link>
         </Card>
 
         <Card>

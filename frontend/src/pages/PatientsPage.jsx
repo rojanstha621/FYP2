@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { assignmentAPI, medicalAPI } from '../services/api';
+import { useState, useEffect, useMemo } from 'react';
+import { authAPI, assignmentAPI, medicalAPI, nurseAPI } from '../services/api';
 import { Card, Button, Select, Textarea } from '../components/FormElements';
 import { Alert } from '../components/Alert';
 import { Spinner } from '../components/Spinner';
@@ -12,6 +12,11 @@ export const PatientsPage = () => {
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [medicalHistory, setMedicalHistory] = useState(null);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [nurses, setNurses] = useState([]);
+  const [assignmentNurseId, setAssignmentNurseId] = useState('');
+  const [assignmentNote, setAssignmentNote] = useState('');
+  const [success, setSuccess] = useState('');
+  const [nurseAssignments, setNurseAssignments] = useState([]);
 
   useEffect(() => {
     fetchPatients();
@@ -19,8 +24,18 @@ export const PatientsPage = () => {
 
   const fetchPatients = async () => {
     try {
-      const response = await assignmentAPI.getAssignments();
+      const [response, directoryResponse, nurseAssignmentsResponse] = await Promise.all([
+        assignmentAPI.getAssignments(),
+        authAPI.getCareTeamDirectory(),
+        nurseAPI.getAssignments(),
+      ]);
+
       const assignments = response.data.result || response.data || [];
+      const directory = directoryResponse.data?.result || directoryResponse.data || {};
+      setNurses(Array.isArray(directory?.nurses) ? directory.nurses : []);
+      const nurseAssignmentData = nurseAssignmentsResponse.data?.result || nurseAssignmentsResponse.data || [];
+      setNurseAssignments(Array.isArray(nurseAssignmentData) ? nurseAssignmentData : []);
+
       const uniquePatients = [];
       const patientIds = new Set();
 
@@ -36,6 +51,49 @@ export const PatientsPage = () => {
       setError('Failed to load patients');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const nursesByPatientId = useMemo(() => {
+    const map = new Map();
+    nurseAssignments
+      .filter((assignment) => assignment.is_active !== false)
+      .forEach((assignment) => {
+        const patientId = assignment.patient;
+        const nurse = assignment.nurse_details;
+        if (!map.has(patientId)) {
+          map.set(patientId, []);
+        }
+        map.get(patientId).push(nurse);
+      });
+    return map;
+  }, [nurseAssignments]);
+
+  const formatAssignedNurses = (patientId) => {
+    const nursesForPatient = nursesByPatientId.get(patientId) || [];
+    if (!nursesForPatient.length) return 'No nurse assigned yet';
+
+    return nursesForPatient
+      .map((nurse) => `${nurse?.first_name || ''} ${nurse?.last_name || ''}`.trim() || nurse?.email)
+      .filter(Boolean)
+      .join(', ');
+  };
+
+  const handleAssignNurse = async () => {
+    if (!selectedPatient?.patient || !assignmentNurseId) return;
+
+    try {
+      await nurseAPI.createAssignment({
+        nurse: assignmentNurseId,
+        patient: selectedPatient.patient,
+        note: assignmentNote,
+      });
+      setAssignmentNurseId('');
+      setAssignmentNote('');
+      setSuccess('Nurse assigned successfully');
+      await fetchPatients();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to assign nurse');
     }
   };
 
@@ -66,6 +124,7 @@ export const PatientsPage = () => {
       </div>
 
       {error && <Alert type="error" message={error} onClose={() => setError('')} />}
+      {success && <Alert type="success" message={success} onClose={() => setSuccess('')} />}
 
       <div className="grid md:grid-cols-2 gap-6">
         {patients.map((assignment) => (
@@ -89,6 +148,10 @@ export const PatientsPage = () => {
 
             <p className="text-palette-dark/60 text-xs mb-4">
               Assigned: {new Date(assignment.assigned_at).toLocaleDateString()}
+            </p>
+
+            <p className="text-palette-dark/70 text-sm mb-4">
+              Nurse: {formatAssignedNurses(assignment.patient)}
             </p>
 
             <div className="flex gap-2">
@@ -166,6 +229,57 @@ export const PatientsPage = () => {
                   {new Date(selectedPatient.assigned_at).toLocaleDateString()}
                 </p>
               </div>
+
+              <div>
+                <label className="text-sm text-palette-dark/80 font-semibold">Assigned Nurse</label>
+                <p className="text-palette-dark">{formatAssignedNurses(selectedPatient.patient)}</p>
+              </div>
+
+              <div>
+                <label className="text-sm text-palette-dark/80 font-semibold">Assigned Nurse(s)</label>
+                <p className="text-palette-dark">{formatAssignedNurses(selectedPatient.patient)}</p>
+              </div>
+            </div>
+
+            <div className="mb-6 rounded-2xl border border-palette-mauve/20 bg-palette-cream/50 p-4 space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold text-palette-dark">Assign Nurse</h3>
+                <p className="text-sm text-palette-dark/70">
+                  Pick a nurse to handle appointments, notes, and other care tasks for this patient.
+                </p>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-[1fr_auto] items-end">
+                <Select
+                  label="Nurse"
+                  value={assignmentNurseId}
+                  onChange={(e) => setAssignmentNurseId(e.target.value)}
+                  className="mb-0"
+                >
+                  <option value="">Select a nurse</option>
+                  {nurses.map((nurse) => (
+                    <option key={nurse.id} value={nurse.id}>
+                      {nurse.first_name} {nurse.last_name} ({nurse.email})
+                    </option>
+                  ))}
+                </Select>
+
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={handleAssignNurse}
+                  disabled={!assignmentNurseId}
+                >
+                  Assign Nurse
+                </Button>
+              </div>
+
+              <Textarea
+                label="Note (optional)"
+                value={assignmentNote}
+                onChange={(e) => setAssignmentNote(e.target.value)}
+                placeholder="Add a short instruction for the nurse"
+              />
             </div>
 
             <div className="flex gap-4">

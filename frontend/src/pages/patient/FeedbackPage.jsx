@@ -43,8 +43,11 @@ export default function FeedbackPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <div className="mb-6 flex items-center gap-3">
-        <h1 className="text-3xl font-bold text-palette-dark">Feedback</h1>
+      <div className="mb-6 glass-panel rounded-[2rem] p-5 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.24em] text-palette-dark/50">Patient workspace</p>
+          <h1 className="mt-2 text-3xl font-bold text-palette-dark">Feedback</h1>
+        </div>
         <span className="rounded-full bg-palette-mauve px-3 py-1 text-sm font-semibold text-white">
           Unread: {unreadCount}
         </span>
@@ -53,7 +56,7 @@ export default function FeedbackPage() {
       {error && <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-red-700">{error}</div>}
 
       {feedback.length === 0 ? (
-        <div className="rounded-lg bg-palette-cream p-8 text-center text-palette-dark/70">
+        <div className="glass-panel rounded-3xl p-8 text-center text-palette-dark/70">
           No feedback received yet.
         </div>
       ) : (
@@ -63,7 +66,7 @@ export default function FeedbackPage() {
               type="button"
               key={item.id}
               onClick={() => handleOpenFeedback(item)}
-              className={`w-full rounded-lg bg-palette-cream p-4 text-left shadow-sm transition hover:shadow ${
+              className={`w-full rounded-3xl glass-panel p-4 text-left transition hover:shadow ${
                 item.is_read ? 'border-l-4 border-transparent' : 'border-l-4 border-palette-mauve'
               }`}
             >

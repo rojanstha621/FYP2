@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from myproject.utils import APIResponse
-from .models import MedicalHistory, TherapistPatientAssignment, NursePatientAssignment, Appointment
+from .models import MedicalHistory, TherapistPatientAssignment, NursePatientAssignment, Appointment, Vitals, NursingNote
 from .serializers import (
     MedicalHistorySerializer,
     MedicalHistoryDetailSerializer,
@@ -15,6 +15,8 @@ from .serializers import (
     NursePatientAssignmentSerializer,
     AppointmentSerializer,
     AppointmentCreateSerializer,
+    VitalsSerializer,
+    NursingNoteSerializer,
 )
 from .permissions import (
     IsPatientOrTherapistReadOnly,
@@ -229,6 +231,7 @@ class TherapistPatientAssignmentViewSet(viewsets.ModelViewSet):
         Filter assignments based on user role:
         - Admins: All assignments
         - Therapists: Their own assignments
+        - Nurses: Assignments for patients under their care
         - Patients: Their own assignments
         """
         user = self.request.user
@@ -238,6 +241,15 @@ class TherapistPatientAssignmentViewSet(viewsets.ModelViewSet):
 
         elif user.role == "THERAPIST":
             return TherapistPatientAssignment.objects.filter(therapist=user)
+
+        elif user.role == "NURSE":
+            assigned_patients = NursePatientAssignment.objects.filter(
+                nurse=user, is_active=True
+            ).values_list("patient_id", flat=True)
+            return TherapistPatientAssignment.objects.filter(
+                patient_id__in=assigned_patients,
+                is_active=True,
+            ).select_related("therapist", "patient")
 
         elif user.role == "PATIENT":
             return TherapistPatientAssignment.objects.filter(patient=user)
@@ -657,6 +669,15 @@ class NursePatientAssignmentViewSet(viewsets.ModelViewSet):
             return NursePatientAssignment.objects.select_related("nurse", "patient").filter(
                 nurse=user
             )
+        if user.role == "THERAPIST":
+            return (
+                NursePatientAssignment.objects.select_related("nurse", "patient")
+                .filter(
+                    patient__assigned_therapists__therapist=user,
+                    patient__assigned_therapists__is_active=True,
+                )
+                .distinct()
+            )
         if user.role == "PATIENT":
             return NursePatientAssignment.objects.select_related("nurse", "patient").filter(
                 patient=user,
@@ -665,16 +686,36 @@ class NursePatientAssignmentViewSet(viewsets.ModelViewSet):
         return NursePatientAssignment.objects.none()
 
     def create(self, request, *args, **kwargs):
-        if request.user.role not in ["ADMIN", "NURSE"]:
+        if request.user.role not in ["ADMIN", "NURSE", "THERAPIST"]:
             return APIResponse.send(
                 is_success=False,
-                message="Only admins or nurses can create nurse assignments",
+                message="Only admins, nurses, or therapists can create nurse assignments",
                 status_code=status.HTTP_403_FORBIDDEN,
             )
 
         data = request.data.copy()
         if request.user.role == "NURSE":
             data["nurse"] = str(request.user.id)
+        elif request.user.role == "THERAPIST":
+            patient_id = data.get("patient")
+            if not patient_id:
+                return APIResponse.send(
+                    is_success=False,
+                    message="Patient is required",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+
+            therapist_assignment_exists = TherapistPatientAssignment.objects.filter(
+                therapist=request.user,
+                patient_id=patient_id,
+                is_active=True,
+            ).exists()
+            if not therapist_assignment_exists:
+                return APIResponse.send(
+                    is_success=False,
+                    message="You can only assign nurses to your own patients",
+                    status_code=status.HTTP_403_FORBIDDEN,
+                )
 
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
@@ -707,14 +748,30 @@ class NursePatientAssignmentViewSet(viewsets.ModelViewSet):
         )
 
     def destroy(self, request, *args, **kwargs):
-        if request.user.role not in ["ADMIN", "NURSE"]:
+        # Allow admins, nurses, or therapists (for their own patients) to deactivate
+        if request.user.role not in ["ADMIN", "NURSE", "THERAPIST"]:
             return APIResponse.send(
                 is_success=False,
-                message="Only admins or nurses can deactivate nurse assignments",
+                message="Only admins, nurses, or therapists can deactivate nurse assignments",
                 status_code=status.HTTP_403_FORBIDDEN,
             )
 
         instance = self.get_object()
+
+        # If therapist, ensure they are assigned to the patient
+        if request.user.role == "THERAPIST":
+            therapist_assignment_exists = TherapistPatientAssignment.objects.filter(
+                therapist=request.user,
+                patient=instance.patient,
+                is_active=True,
+            ).exists()
+            if not therapist_assignment_exists:
+                return APIResponse.send(
+                    is_success=False,
+                    message="You can only unassign nurses from your own patients",
+                    status_code=status.HTTP_403_FORBIDDEN,
+                )
+
         instance.is_active = False
         instance.save(update_fields=["is_active"])
 
@@ -806,4 +863,146 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             message="Appointment cancelled successfully",
             result=AppointmentSerializer(instance).data,
             status_code=status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=["patch"], url_path="check-in")
+    def check_in(self, request, pk=None):
+        """Mark appointment as checked-in. Nurses/admins only."""
+        if request.user.role not in ["ADMIN", "NURSE"]:
+            return APIResponse.send(
+                is_success=False,
+                message="Only admins or nurses can check in patients",
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+
+        appointment = self.get_object()
+        appointment.status = Appointment.StatusChoices.CHECKED_IN
+        appointment.save(update_fields=["status"]) 
+
+        return APIResponse.send(
+            is_success=True,
+            message="Appointment checked-in successfully",
+            result=AppointmentSerializer(appointment).data,
+            status_code=status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=["patch"], url_path="assign-doctor")
+    def assign_doctor(self, request, pk=None):
+        """Assign a doctor to the appointment. Nurses/admins can assign."""
+        if request.user.role not in ["ADMIN", "NURSE"]:
+            return APIResponse.send(
+                is_success=False,
+                message="Only admins or nurses can assign a doctor",
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+
+        doctor_id = request.data.get("doctor")
+        if not doctor_id:
+            return APIResponse.send(
+                is_success=False,
+                message="doctor is required",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from account.models import User
+        try:
+            doctor = User.objects.get(id=doctor_id, role="DOCTOR")
+        except User.DoesNotExist:
+            return APIResponse.send(
+                is_success=False,
+                message="Doctor not found",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
+        appointment = self.get_object()
+        appointment.doctor = doctor
+        appointment.save(update_fields=["doctor"]) 
+
+        return APIResponse.send(
+            is_success=True,
+            message="Doctor assigned successfully",
+            result=AppointmentSerializer(appointment).data,
+            status_code=status.HTTP_200_OK,
+        )
+
+
+class VitalsViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = VitalsSerializer
+    queryset = Vitals.objects.select_related("patient", "nurse").all()
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == "ADMIN":
+            return Vitals.objects.select_related("patient", "nurse").all()
+        if user.role == "NURSE":
+            # Nurses see vitals they recorded or for their assigned patients
+            assigned = NursePatientAssignment.objects.filter(nurse=user, is_active=True).values_list("patient_id", flat=True)
+            return Vitals.objects.filter(patient_id__in=assigned)
+        if user.role == "PATIENT":
+            return Vitals.objects.filter(patient=user)
+        return Vitals.objects.none()
+
+    def create(self, request, *args, **kwargs):
+        if request.user.role not in ["ADMIN", "NURSE"]:
+            return APIResponse.send(
+                is_success=False,
+                message="Only admins or nurses can record vitals",
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+
+        data = request.data.copy()
+        if request.user.role == "NURSE":
+            data["nurse"] = str(request.user.id)
+
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        return APIResponse.send(
+            is_success=True,
+            message="Vitals recorded successfully",
+            result=serializer.data,
+            status_code=status.HTTP_201_CREATED,
+        )
+
+
+class NursingNoteViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = NursingNoteSerializer
+    queryset = NursingNote.objects.select_related("patient", "nurse").all()
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == "ADMIN":
+            return NursingNote.objects.select_related("patient", "nurse").all()
+        if user.role == "NURSE":
+            # Nurses see notes they wrote or for their assigned patients
+            assigned = NursePatientAssignment.objects.filter(nurse=user, is_active=True).values_list("patient_id", flat=True)
+            return NursingNote.objects.filter(patient_id__in=assigned)
+        if user.role == "PATIENT":
+            return NursingNote.objects.filter(patient=user)
+        return NursingNote.objects.none()
+
+    def create(self, request, *args, **kwargs):
+        if request.user.role not in ["ADMIN", "NURSE"]:
+            return APIResponse.send(
+                is_success=False,
+                message="Only admins or nurses can create nursing notes",
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+
+        data = request.data.copy()
+        if request.user.role == "NURSE":
+            data["nurse"] = str(request.user.id)
+
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        return APIResponse.send(
+            is_success=True,
+            message="Nursing note created successfully",
+            result=serializer.data,
+            status_code=status.HTTP_201_CREATED,
         )

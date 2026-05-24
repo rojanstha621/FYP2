@@ -77,44 +77,44 @@ export const MedicalHistoryPage = () => {
     {
       key: 'past_injuries',
       label: 'Past Injuries',
-      color: 'bg-palette-cream border-palette-mauve',
+      color: 'border-palette-mauve/30',
       value: medicalHistory?.past_injuries || 'No past injuries recorded',
     },
     {
       key: 'chronic_conditions',
       label: 'Chronic Conditions',
-      color: 'bg-palette-cream border-palette-blush',
+      color: 'border-palette-blush/40',
       value: medicalHistory?.chronic_conditions || 'No chronic conditions recorded',
     },
     {
       key: 'surgeries',
       label: 'Surgeries',
-      color: 'bg-palette-cream border-palette-beige',
+      color: 'border-palette-beige/60',
       value: medicalHistory?.surgeries || 'No surgeries recorded',
     },
     {
       key: 'medications',
       label: 'Current Medications',
-      color: 'bg-palette-cream border-palette-mauve',
+      color: 'border-palette-mauve/30',
       value: medicalHistory?.medications || 'No medications recorded',
     },
     {
       key: 'allergies',
       label: 'Allergies',
-      color: 'bg-palette-cream border-palette-blush',
+      color: 'border-palette-blush/40',
       value: medicalHistory?.allergies || 'No allergies recorded',
     },
     {
       key: 'current_symptoms',
       label: 'Current Symptoms',
-      color: 'bg-palette-cream border-palette-mauve',
+      color: 'border-palette-mauve/30',
       value: medicalHistory?.current_symptoms || 'No symptoms recorded',
     },
   ];
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
+      <div className="glass-panel rounded-[2rem] p-6 md:p-8 mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-4xl font-bold text-palette-dark mb-2">Medical History</h1>
           <p className="text-palette-dark/70">Complete overview of your medical background</p>

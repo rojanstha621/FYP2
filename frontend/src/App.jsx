@@ -9,6 +9,7 @@ import { Layout } from './components/Layout';
 // Auth Pages
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import { HomePage } from './pages/HomePage';
 import { UnauthorizedPage } from './pages/UnauthorizedPage';
 
@@ -31,6 +32,7 @@ import { AssignmentsPage } from './pages/AssignmentsPage';
 import TherapistVideosPage from './pages/TherapistVideosPage';
 import TherapistOverviewPage from './pages/therapist/TherapistOverviewPage';
 import SendFeedbackPage from './pages/therapist/SendFeedbackPage';
+import TherapistNurseAssignmentsPage from './pages/therapist/TherapistNurseAssignmentsPage';
 
 // Nurse Pages
 import { NurseDashboardPage } from './pages/NurseDashboardPage';
@@ -90,6 +92,7 @@ function AppContent() {
         />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
             {/* Protected Routes - All Roles */}
@@ -170,6 +173,14 @@ function AppContent() {
               }
             />
             <Route
+              path="/therapist/nurse-assignments"
+              element={
+                <ProtectedRoute requiredRole="THERAPIST">
+                  <TherapistNurseAssignmentsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/therapist/feedback"
               element={
                 <ProtectedRoute requiredRole="THERAPIST">
@@ -180,10 +191,26 @@ function AppContent() {
 
             {/* Nurse Routes */}
             <Route
-              path="/nurse/dashboard"
+              path="/nurse"
               element={
                 <ProtectedRoute allowedRoles={["NURSE", "ADMIN"]}>
                   <NurseDashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/nurse/*"
+              element={
+                <ProtectedRoute allowedRoles={["NURSE", "ADMIN"]}>
+                  <NurseDashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/nurse/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={["NURSE", "ADMIN"]}>
+                  <Navigate to="/nurse" replace />
                 </ProtectedRoute>
               }
             />

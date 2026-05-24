@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { assignmentAPI, medicalAPI } from '../services/api';
+import { useEffect, useState, useMemo } from 'react';
+import { assignmentAPI, medicalAPI, authAPI, nurseAPI } from '../services/api';
 import { Alert } from '../components/Alert';
 import { Spinner } from '../components/Spinner';
 
@@ -8,6 +8,10 @@ export default function TherapistPendingRequestsPage() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [requests, setRequests] = useState([]);
+  const [nurses, setNurses] = useState([]);
+  const [nurseAssignments, setNurseAssignments] = useState([]);
+  const [assignmentNurseId, setAssignmentNurseId] = useState('');
+  const [assigningFor, setAssigningFor] = useState(null);
   const [approving, setApproving] = useState(null);
   const [rejecting, setRejecting] = useState(null);
   const [selectedPatient, setSelectedPatient] = useState(null);
@@ -30,8 +34,17 @@ export default function TherapistPendingRequestsPage() {
 
   const fetchRequests = async () => {
     try {
-      const res = await assignmentAPI.getPending({ page_size: 1000 });
+      const [res, directoryRes, nurseAssignmentsRes] = await Promise.all([
+        assignmentAPI.getPending({ page_size: 1000 }),
+        authAPI.getCareTeamDirectory(),
+        nurseAPI.getAssignments(),
+      ]);
+
       setRequests(extractList(res.data));
+      const directory = directoryRes.data?.result || directoryRes.data || {};
+      setNurses(Array.isArray(directory?.nurses) ? directory.nurses : []);
+      const nurseAssignmentData = nurseAssignmentsRes.data?.result || nurseAssignmentsRes.data || [];
+      setNurseAssignments(Array.isArray(nurseAssignmentData) ? nurseAssignmentData : []);
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load requests');
@@ -51,6 +64,57 @@ export default function TherapistPendingRequestsPage() {
       setShowMedicalModal(true);
     } catch (err) {
       setError('Failed to load medical history');
+    }
+  };
+
+  const nursesByPatientId = useMemo(() => {
+    const map = new Map();
+    nurseAssignments
+      .filter((assignment) => assignment.is_active !== false)
+      .forEach((assignment) => {
+        const patientId = assignment.patient;
+        const nurse = assignment.nurse_details;
+        if (!map.has(patientId)) map.set(patientId, []);
+        map.get(patientId).push(nurse);
+      });
+    return map;
+  }, [nurseAssignments]);
+
+  const formatAssignedNurses = (patientId) => {
+    const nursesForPatient = nursesByPatientId.get(patientId) || [];
+    if (!nursesForPatient.length) return 'No nurse assigned yet';
+
+    return nursesForPatient
+      .map((nurse) => `${nurse?.first_name || ''} ${nurse?.last_name || ''}`.trim() || nurse?.email)
+      .filter(Boolean)
+      .join(', ');
+  };
+
+  const handleAssignNurse = async (patientId) => {
+    if (!assignmentNurseId || !patientId) return;
+    setAssigningFor(patientId);
+    try {
+      await nurseAPI.createAssignment({ nurse: assignmentNurseId, patient: patientId });
+      setAssignmentNurseId('');
+      setSuccess('Nurse assigned successfully');
+      await fetchRequests();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to assign nurse');
+    } finally {
+      setAssigningFor(null);
+    }
+  };
+
+  const handleUnassign = async (patientId, nurseId) => {
+    try {
+      // find the active assignment id for this patient+nurse
+      const match = nurseAssignments.find(a => a.patient === patientId && a.nurse === nurseId && a.is_active !== false);
+      if (!match) return setError('No active assignment found to remove');
+      await nurseAPI.deactivateAssignment(match.id);
+      setSuccess('Nurse unassigned successfully');
+      await fetchRequests();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to unassign nurse');
     }
   };
 
@@ -95,8 +159,12 @@ export default function TherapistPendingRequestsPage() {
   };
 
   return (
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <h1 className="text-3xl font-bold mb-6">Pending Patient Requests</h1>
+      <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+        <section className="glass-panel rounded-[2rem] p-6 md:p-8">
+          <p className="text-xs font-bold uppercase tracking-[0.24em] text-palette-dark/50">Therapist workspace</p>
+          <h1 className="mt-2 text-3xl md:text-4xl font-bold text-palette-dark">Pending Patient Requests</h1>
+          <p className="mt-2 text-palette-dark/70">Review and respond to new patient assignment requests.</p>
+        </section>
 
         {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
         {success && <Alert type="success" message={success} onClose={() => setSuccess(null)} />}
@@ -104,15 +172,15 @@ export default function TherapistPendingRequestsPage() {
         {loading ? (
           <Spinner />
         ) : (
-          <div className="bg-palette-cream rounded-lg shadow divide-y">
+          <div className="glass-panel rounded-3xl border border-palette-mauve/15 divide-y">
             {requests.length ? (
               requests.map((r) => (
-                <div key={r.id} className="p-5">
+                <div key={r.id} className="p-6">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-3">
-                        <div className="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                          <span className="text-lg font-semibold text-indigo-600">
+                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-palette-mauve to-[#6f4c60] flex items-center justify-center flex-shrink-0">
+                          <span className="text-lg font-semibold text-white">
                             {r.patient_details?.first_name?.[0]}{r.patient_details?.last_name?.[0]}
                           </span>
                         </div>
@@ -135,6 +203,11 @@ export default function TherapistPendingRequestsPage() {
                           Requested on {new Date(r.created_at).toLocaleDateString()} at {new Date(r.created_at).toLocaleTimeString()}
                         </div>
                       )}
+                      
+                      <div className="mt-3 text-sm">
+                        <span className="font-medium">Assigned Nurse:</span>
+                        <div className="text-palette-dark/70">{formatAssignedNurses(r.patient_details?.id || r.patient)}</div>
+                      </div>
                     </div>
 
                     <div className="flex flex-col gap-2">
@@ -143,7 +216,7 @@ export default function TherapistPendingRequestsPage() {
                           r.patient_details?.id || r.patient,
                           `${r.patient_details?.first_name} ${r.patient_details?.last_name}`
                         )}
-                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-palette-mauve transition text-sm whitespace-nowrap"
+                        className="btn-secondary text-sm whitespace-nowrap"
                       >
                         View Medical History
                       </button>
@@ -154,7 +227,7 @@ export default function TherapistPendingRequestsPage() {
                           patientName: `${r.patient_details?.first_name} ${r.patient_details?.last_name}` 
                         })}
                         disabled={approving === r.id}
-                        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition text-sm disabled:opacity-50 whitespace-nowrap"
+                        className="btn-primary text-sm whitespace-nowrap"
                       >
                         {approving === r.id ? 'Accepting...' : 'Accept Request'}
                       </button>
@@ -165,10 +238,46 @@ export default function TherapistPendingRequestsPage() {
                           patientName: `${r.patient_details?.first_name} ${r.patient_details?.last_name}` 
                         })}
                         disabled={rejecting === r.id}
-                        className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition text-sm disabled:opacity-50 whitespace-nowrap"
+                        className="btn-danger text-sm whitespace-nowrap"
                       >
                         {rejecting === r.id ? 'Rejecting...' : 'Reject Request'}
                       </button>
+                      
+                      <div className="mt-2 flex flex-col gap-2">
+                        <div className="text-sm text-palette-dark/80">Edit Nurse Assignment</div>
+                        <div className="flex gap-2">
+                          <select
+                            value={assignmentNurseId}
+                            onChange={(e) => setAssignmentNurseId(e.target.value)}
+                            className="border border-palette-mauve/30 rounded-xl px-3 py-2 text-sm bg-white/70 text-palette-dark"
+                          >
+                            <option value="">Select a nurse</option>
+                            {nurses.map((n) => (
+                              <option key={n.id} value={n.id}>{n.first_name} {n.last_name} ({n.email})</option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={() => handleAssignNurse(r.patient_details?.id || r.patient)}
+                            disabled={assigningFor === (r.patient_details?.id || r.patient) || !assignmentNurseId}
+                            className="btn-primary text-sm disabled:opacity-60"
+                          >
+                            {assigningFor === (r.patient_details?.id || r.patient) ? 'Assigning...' : 'Assign'}
+                          </button>
+                        </div>
+
+                        {/* show individual assigned nurses with unassign buttons */}
+                        { (nursesByPatientId.get(r.patient_details?.id || r.patient) || []).map((n) => (
+                          <div key={n.id} className="flex items-center gap-2 text-sm">
+                            <div className="text-palette-dark/70">{n.first_name} {n.last_name} ({n.email})</div>
+                            <button
+                              onClick={() => handleUnassign(r.patient_details?.id || r.patient, n.id)}
+                              className="text-sm text-red-600 hover:underline"
+                            >
+                              Unassign
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -188,7 +297,7 @@ export default function TherapistPendingRequestsPage() {
         {/* Confirmation Modal */}
         {confirmAction && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-palette-cream rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="glass-panel rounded-3xl p-6 max-w-md w-full mx-4 border border-palette-mauve/15">
               <h3 className="text-lg font-semibold mb-4">
                 {confirmAction.type === 'approve' ? 'Confirm Acceptance' : 'Confirm Rejection'}
               </h3>
@@ -201,17 +310,13 @@ export default function TherapistPendingRequestsPage() {
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={() => setConfirmAction(null)}
-                  className="px-4 py-2 border border-palette-mauve rounded hover:bg-palette-beige transition"
+                  className="btn-secondary"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => confirmAction.type === 'approve' ? handleApprove(confirmAction.id) : handleReject(confirmAction.id)}
-                  className={`px-4 py-2 rounded text-white transition ${
-                    confirmAction.type === 'approve' 
-                      ? 'bg-green-600 hover:bg-green-700' 
-                      : 'bg-red-600 hover:bg-red-700'
-                  }`}
+                  className={confirmAction.type === 'approve' ? 'btn-primary' : 'btn-danger'}
                 >
                   {confirmAction.type === 'approve' ? 'Accept' : 'Reject'}
                 </button>
@@ -223,7 +328,7 @@ export default function TherapistPendingRequestsPage() {
         {/* Medical History Modal */}
         {showMedicalModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
-            <div className="bg-palette-cream rounded-lg p-6 max-w-3xl w-full mx-4 my-8 max-h-[90vh] overflow-y-auto">
+            <div className="glass-panel rounded-3xl p-6 max-w-3xl w-full mx-4 my-8 max-h-[90vh] overflow-y-auto border border-palette-mauve/15">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-semibold">Medical History - {selectedPatient}</h3>
                 <button
@@ -241,7 +346,7 @@ export default function TherapistPendingRequestsPage() {
               {medicalHistory && medicalHistory.length > 0 ? (
                 <div className="space-y-4">
                   {medicalHistory.map((history) => (
-                    <div key={history.id} className="border rounded-lg p-4 bg-palette-beige">
+                    <div key={history.id} className="border border-palette-mauve/20 rounded-2xl p-4 bg-white/70">
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div>
                           <span className="font-semibold">Condition:</span>

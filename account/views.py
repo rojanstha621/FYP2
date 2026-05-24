@@ -10,6 +10,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from myproject.utils import APIResponse
 from .models import UserProfile
+from medicals.models import TherapistPatientAssignment
 from .serializers import (
     LoginSerializer,
     LogoutSerializer,
@@ -19,6 +20,7 @@ from .serializers import (
     UserUpdateSerializer,
     ChangePasswordSerializer,
     RegisterSerializer,
+    VerifyEmailSerializer,
     AdminUserListSerializer,
     AdminUserDetailSerializer,
     AdminUserUpdateSerializer,
@@ -214,14 +216,29 @@ class RegisterView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        serializer = RegisterSerializer(data=request.data)
+        serializer = RegisterSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
         return APIResponse.send(
             is_success=True,
-            message="Registration successful. Please log in.",
+            message="Registration successful. Please check your email to verify your account.",
             status_code=status.HTTP_201_CREATED,
+        )
+
+
+class VerifyEmailView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = VerifyEmailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return APIResponse.send(
+            is_success=True,
+            message="Email verified successfully. You can now log in.",
+            status_code=status.HTTP_200_OK,
         )
 
 
@@ -393,23 +410,37 @@ class PatientDashboardView(APIView):
 class CareTeamDirectoryView(APIView):
     """Nurses and admins can fetch patients and approved therapists from one endpoint."""
 
-    permission_classes = [IsAuthenticated, IsNurseOrAdmin]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         from .models import User
 
         nurses = User.objects.filter(role="NURSE").order_by("first_name", "last_name")
-        patients = User.objects.filter(role="PATIENT").order_by("first_name", "last_name")
-        therapists = User.objects.filter(
-            role="THERAPIST",
-            therapist_status=User.TherapistStatusChoices.APPROVED,
-        ).order_by("first_name", "last_name")
 
-        payload = {
-            "nurses": UserBasicSerializer(nurses, many=True).data,
-            "patients": UserBasicSerializer(patients, many=True).data,
-            "therapists": AdminUserListSerializer(therapists, many=True).data,
-        }
+        if request.user.role == "THERAPIST":
+            patient_ids = TherapistPatientAssignment.objects.filter(
+                therapist=request.user,
+                is_active=True,
+            ).values_list("patient_id", flat=True)
+            patients = User.objects.filter(id__in=patient_ids).order_by("first_name", "last_name")
+
+            payload = {
+                "nurses": UserBasicSerializer(nurses, many=True).data,
+                "patients": UserBasicSerializer(patients, many=True).data,
+                "therapists": [],
+            }
+        else:
+            patients = User.objects.filter(role="PATIENT").order_by("first_name", "last_name")
+            therapists = User.objects.filter(
+                role="THERAPIST",
+                therapist_status=User.TherapistStatusChoices.APPROVED,
+            ).order_by("first_name", "last_name")
+
+            payload = {
+                "nurses": UserBasicSerializer(nurses, many=True).data,
+                "patients": UserBasicSerializer(patients, many=True).data,
+                "therapists": AdminUserListSerializer(therapists, many=True).data,
+            }
 
         return APIResponse.send(
             is_success=True,

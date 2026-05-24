@@ -45,7 +45,10 @@ export default function AdminMedicalHistoriesPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold text-palette-dark mb-8">All Medical Histories</h1>
+      <div className="glass-panel rounded-[2rem] p-6 md:p-8 mb-8">
+        <p className="text-xs font-bold uppercase tracking-[0.24em] text-palette-dark/50">Admin workspace</p>
+        <h1 className="mt-2 text-4xl font-bold text-palette-dark">All Medical Histories</h1>
+      </div>
 
       {error && <Alert type="error" message={error} onClose={() => setError('')} />}
 
@@ -77,7 +80,7 @@ export default function AdminMedicalHistoriesPage() {
                 </h3>
                 <p className="text-palette-dark/60 text-sm">{history.patient_details?.email}</p>
               </div>
-              <span className="px-3 py-1 bg-palette-cream text-palette-dark rounded-full text-sm font-medium">
+              <span className="px-3 py-1 bg-white/70 text-palette-dark rounded-full text-sm font-medium border border-palette-mauve/20">
                 {history.patient_details?.role}
               </span>
             </div>
@@ -125,42 +128,42 @@ export default function AdminMedicalHistoriesPage() {
             </p>
 
             <div className="space-y-6">
-              <div className="p-4 bg-palette-cream/50 rounded-lg">
+              <div className="p-4 bg-white/70 rounded-2xl border border-palette-mauve/15">
                 <h3 className="text-lg font-semibold text-palette-dark mb-2">Past Injuries</h3>
                 <p className="text-palette-dark/70 whitespace-pre-wrap">
                   {selectedHistory.past_injuries || 'No past injuries recorded'}
                 </p>
               </div>
 
-              <div className="p-4 bg-palette-cream/50 rounded-lg">
+              <div className="p-4 bg-white/70 rounded-2xl border border-palette-mauve/15">
                 <h3 className="text-lg font-semibold text-palette-dark mb-2">Chronic Conditions</h3>
                 <p className="text-palette-dark/70 whitespace-pre-wrap">
                   {selectedHistory.chronic_conditions || 'No chronic conditions recorded'}
                 </p>
               </div>
 
-              <div className="p-4 bg-palette-cream/50 rounded-lg">
+              <div className="p-4 bg-white/70 rounded-2xl border border-palette-mauve/15">
                 <h3 className="text-lg font-semibold text-palette-dark mb-2">Surgeries</h3>
                 <p className="text-palette-dark/70 whitespace-pre-wrap">
                   {selectedHistory.surgeries || 'No surgeries recorded'}
                 </p>
               </div>
 
-              <div className="p-4 bg-palette-cream/50 rounded-lg">
+              <div className="p-4 bg-white/70 rounded-2xl border border-palette-mauve/15">
                 <h3 className="text-lg font-semibold text-palette-dark mb-2">Current Medications</h3>
                 <p className="text-palette-dark/70 whitespace-pre-wrap">
                   {selectedHistory.medications || 'No medications recorded'}
                 </p>
               </div>
 
-              <div className="p-4 bg-palette-cream/50 rounded-lg">
+              <div className="p-4 bg-white/70 rounded-2xl border border-palette-mauve/15">
                 <h3 className="text-lg font-semibold text-palette-dark mb-2">Allergies</h3>
                 <p className="text-palette-dark/70 whitespace-pre-wrap">
                   {selectedHistory.allergies || 'No allergies recorded'}
                 </p>
               </div>
 
-              <div className="p-4 bg-palette-cream/50 rounded-lg">
+              <div className="p-4 bg-white/70 rounded-2xl border border-palette-mauve/15">
                 <h3 className="text-lg font-semibold text-palette-dark mb-2">Current Symptoms</h3>
                 <p className="text-palette-dark/70 whitespace-pre-wrap">
                   {selectedHistory.current_symptoms || 'No symptoms recorded'}
@@ -168,7 +171,7 @@ export default function AdminMedicalHistoriesPage() {
               </div>
 
               {selectedHistory.medical_report && (
-                <div className="p-4 bg-palette-cream/50 rounded-lg">
+                <div className="p-4 bg-white/70 rounded-2xl border border-palette-mauve/15">
                   <h3 className="text-lg font-semibold text-palette-dark mb-2">Medical Report</h3>
                   <a
                     href={selectedHistory.medical_report}

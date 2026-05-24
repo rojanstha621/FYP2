@@ -23,6 +23,11 @@ const buildFallbackAvatar = (firstName, lastName) => {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=987185&color=ffffff&size=256&bold=true`;
 };
 
+const getTherapistBio = (therapist) => {
+  const bio = therapist?.profile?.bio || therapist?.bio || '';
+  return bio.length > 160 ? `${bio.slice(0, 157)}...` : bio;
+};
+
 export default function ApprovedTherapistsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -84,19 +89,44 @@ export default function ApprovedTherapistsPage() {
 
   return (
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="relative overflow-hidden rounded-2xl border border-palette-mauve/20 bg-palette-cream p-6 md:p-8 mb-8 shadow-sm">
-          <div className="absolute -top-16 -right-8 h-40 w-40 rounded-full bg-palette-blush/35 blur-2xl" />
-          <div className="absolute -bottom-16 left-8 h-40 w-40 rounded-full bg-palette-beige/50 blur-2xl" />
-          <div className="relative">
-            <p className="text-xs uppercase tracking-[0.24em] text-palette-dark/70 font-semibold mb-2">
-              Therapist Directory
-            </p>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-palette-dark leading-tight">
-              Find The Right Therapist
-            </h1>
-            <p className="text-palette-dark/70 mt-2 max-w-2xl">
-              Browse approved therapists, review details, and send a request in one click.
-            </p>
+        <div className="relative overflow-hidden rounded-[2.5rem] border border-palette-mauve/20 glass-panel p-6 md:p-10 mb-8">
+          <div className="absolute -top-24 -right-16 h-56 w-56 rounded-full bg-palette-blush/40 blur-3xl" />
+          <div className="absolute -bottom-20 left-10 h-52 w-52 rounded-full bg-palette-beige/50 blur-3xl" />
+          <div className="relative grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+            <div>
+              <p className="text-xs uppercase tracking-[0.28em] text-palette-dark/60 font-semibold mb-2">
+                Therapist Directory
+              </p>
+              <h1 className="text-3xl md:text-4xl font-extrabold text-palette-dark leading-tight">
+                Match with an approved therapist in minutes
+              </h1>
+              <p className="text-palette-dark/70 mt-3 max-w-2xl">
+                Review specialties, contact details, and request a therapist for your recovery plan.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <div className="rounded-2xl bg-white/70 px-4 py-3 text-sm text-palette-dark/70 border border-palette-mauve/20">
+                  Verified therapists only
+                </div>
+                <div className="rounded-2xl bg-white/70 px-4 py-3 text-sm text-palette-dark/70 border border-palette-mauve/20">
+                  Fast response requests
+                </div>
+              </div>
+            </div>
+            <div className="glass-panel rounded-3xl p-5 md:p-6 border border-palette-mauve/15">
+              <p className="text-xs uppercase tracking-[0.24em] text-palette-dark/50 font-semibold">Your status</p>
+              <div className="mt-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-palette-dark/70">Assigned therapists</span>
+                  <span className="text-xl font-bold text-palette-dark">{assignedIds.size}</span>
+                </div>
+                <div className="h-2 rounded-full bg-palette-beige/70">
+                  <div className="h-2 rounded-full bg-palette-mauve" style={{ width: assignedIds.size ? '70%' : '20%' }} />
+                </div>
+                <p className="text-sm text-palette-dark/60">
+                  Keep exploring to find the perfect care match.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -108,7 +138,7 @@ export default function ApprovedTherapistsPage() {
           <Alert type="success" message={success} onClose={() => setSuccess(null)} />
         )}
 
-        <div className="bg-palette-cream border border-palette-mauve/20 rounded-2xl shadow-sm p-4 md:p-5 mb-8">
+        <div className="glass-panel border border-palette-mauve/20 rounded-2xl p-4 md:p-5 mb-8">
           <div className="flex flex-col md:flex-row md:items-center gap-4">
             <div className="relative flex-1">
               <svg className="w-5 h-5 text-palette-dark/45 absolute left-3 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -118,10 +148,10 @@ export default function ApprovedTherapistsPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by name, email, or phone"
-                className="w-full pl-10 pr-3 py-3 border border-palette-mauve/30 rounded-xl bg-palette-beige/30 text-palette-dark focus:outline-none focus:ring-2 focus:ring-palette-mauve"
+                className="input-field pl-10"
               />
             </div>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-palette-beige text-palette-dark font-semibold self-start md:self-auto">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/70 text-palette-dark font-semibold self-start md:self-auto border border-palette-mauve/20">
               <span className="text-lg">{filtered.length}</span>
               <span className="text-sm text-palette-dark/80">therapists found</span>
             </div>
@@ -136,20 +166,30 @@ export default function ApprovedTherapistsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {filtered.length ? (
               filtered.map((t) => (
-                <div key={t.id} className="group bg-palette-cream rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border border-palette-mauve/20 hover:-translate-y-0.5">
+                <div
+                  key={t.id}
+                  className="group glass-panel rounded-[2rem] hover:shadow-lg transition-all duration-300 overflow-hidden border border-palette-mauve/20 hover:-translate-y-1"
+                >
                   <div className="h-1.5 bg-gradient-to-r from-palette-mauve via-palette-blush to-palette-dark" />
 
                   <div className="px-6 pt-6 pb-5">
-                    <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-start justify-between gap-3 mb-4">
                       <div className="flex items-center gap-3 min-w-0">
-                        <img
-                          src={normalizeImageUrl(t.profile_picture) || buildFallbackAvatar(t.first_name, t.last_name)}
-                          alt={`${t.first_name || ''} ${t.last_name || ''}`.trim() || 'Therapist'}
-                          className="w-14 h-14 rounded-xl object-cover shadow-sm shrink-0 border border-palette-mauve/20"
-                          loading="lazy"
-                        />
+                        <div className="relative">
+                          <div className="p-1 rounded-[1.25rem] bg-gradient-to-br from-palette-mauve/40 via-palette-blush/40 to-palette-beige/60">
+                            <img
+                              src={normalizeImageUrl(t.profile_picture) || buildFallbackAvatar(t.first_name, t.last_name)}
+                              alt={`${t.first_name || ''} ${t.last_name || ''}`.trim() || 'Therapist'}
+                              className="w-20 h-20 rounded-[1rem] object-cover shadow-md shrink-0 bg-palette-beige/30"
+                              loading="lazy"
+                            />
+                          </div>
+                          <div className="absolute -bottom-2 -right-2 rounded-full bg-white px-2 py-1 text-[10px] font-bold text-palette-mauve border border-palette-mauve/20 shadow-sm">
+                            Verified
+                          </div>
+                        </div>
                         <div className="min-w-0">
-                          <h3 className="text-lg font-bold text-palette-dark truncate">
+                          <h3 className="text-xl font-bold text-palette-dark truncate">
                             {t.first_name} {t.last_name}
                           </h3>
                           <p className="text-xs uppercase tracking-wider text-palette-dark/55">Approved Therapist</p>
@@ -161,6 +201,12 @@ export default function ApprovedTherapistsPage() {
                         </span>
                       )}
                     </div>
+
+                    {getTherapistBio(t) && (
+                      <p className="text-sm text-palette-dark/70 leading-relaxed mb-4">
+                        {getTherapistBio(t)}
+                      </p>
+                    )}
 
                     <div className="space-y-2.5 mb-5 text-sm">
                       <div className="flex items-center gap-2 text-palette-dark/80 break-all">
@@ -182,7 +228,7 @@ export default function ApprovedTherapistsPage() {
                     <div className="flex gap-2.5">
                       <Link
                         to={`/therapists/${t.id}`}
-                        className="flex-1 bg-palette-mauve hover:bg-palette-dark text-white py-2.5 px-4 rounded-xl text-sm font-semibold text-center transition-colors"
+                        className="flex-1 btn-secondary text-sm"
                       >
                         View Profile
                       </Link>
@@ -190,7 +236,7 @@ export default function ApprovedTherapistsPage() {
                         <button
                           onClick={() => handleBookTherapist(t.id)}
                           disabled={bookingLoading === t.id}
-                          className="flex-1 bg-palette-dark hover:bg-palette-mauve disabled:bg-palette-dark/35 text-white py-2.5 px-4 rounded-xl text-sm font-semibold transition-colors"
+                          className="flex-1 btn-primary text-sm"
                         >
                           {bookingLoading === t.id ? (
                             <span className="flex items-center justify-center">
@@ -210,7 +256,7 @@ export default function ApprovedTherapistsPage() {
                 </div>
               ))
             ) : (
-              <div className="col-span-full text-center py-14 bg-palette-cream border border-palette-mauve/20 rounded-2xl shadow-sm">
+              <div className="col-span-full text-center py-14 glass-panel border border-palette-mauve/20 rounded-2xl">
                 <svg className="mx-auto h-12 w-12 text-palette-dark/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>

@@ -214,8 +214,9 @@ export default function PatientVideosPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-palette-dark">My Educational Videos</h1>
+      <div className="glass-panel rounded-[2rem] p-6 md:p-8 mb-6">
+        <p className="text-xs font-bold uppercase tracking-[0.24em] text-palette-dark/50">Patient workspace</p>
+        <h1 className="mt-2 text-3xl font-bold text-palette-dark">My Educational Videos</h1>
         <p className="text-palette-dark/70 mt-2">Videos assigned to you by your therapist</p>
       </div>
 
@@ -231,7 +232,7 @@ export default function PatientVideosPage() {
             { label: 'Unviewed', value: statistics.total_unviewed, icon: FiClock, color: 'bg-yellow-500' },
             { label: 'Completion', value: `${statistics.completion_rate}%`, icon: FiCheckCircle, color: 'bg-palette-dark' },
           ].map(({ label, value, icon: Icon, color }) => (
-            <div key={label} className="bg-palette-cream rounded-lg shadow-sm p-5 border border-palette-mauve/20 flex items-center gap-4">
+            <div key={label} className="glass-panel rounded-3xl p-5 border border-palette-mauve/20 flex items-center gap-4">
               <div className={`${color} rounded-md p-3`}>
                 <Icon className="h-5 w-5 text-white" />
               </div>
@@ -246,7 +247,7 @@ export default function PatientVideosPage() {
 
       {/* Scheduled stats row */}
       {statistics?.scheduled && statistics.scheduled.total_days > 0 && (
-        <div className="bg-palette-cream rounded-lg border border-palette-mauve/20 p-4 mb-6">
+        <div className="glass-panel rounded-3xl border border-palette-mauve/20 p-4 mb-6">
           <p className="text-sm font-semibold text-palette-dark mb-3 flex items-center gap-2">
             <FiCalendar /> Daily Schedule Overview
           </p>
@@ -278,7 +279,7 @@ export default function PatientVideosPage() {
       )}
 
       {/* Filters */}
-      <div className="bg-palette-cream p-4 rounded-lg shadow-sm mb-6 border border-palette-mauve/20">
+      <div className="glass-panel p-4 rounded-3xl mb-6 border border-palette-mauve/20">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-palette-dark/80 mb-2">Search</label>
@@ -287,7 +288,7 @@ export default function PatientVideosPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by title..."
-              className="w-full px-3 py-2 border border-palette-mauve/30 rounded-md bg-palette-beige/40 text-palette-dark focus:outline-none focus:ring-2 focus:ring-palette-mauve"
+              className="input-field"
             />
           </div>
           <div>
@@ -295,7 +296,7 @@ export default function PatientVideosPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-palette-mauve/30 rounded-md bg-palette-beige/40 text-palette-dark focus:outline-none focus:ring-2 focus:ring-palette-mauve"
+              className="input-field"
             >
               <option value="">All Videos</option>
               <option value="available">Available Now</option>
@@ -310,7 +311,7 @@ export default function PatientVideosPage() {
       {loading ? (
         <div className="flex justify-center py-12"><Spinner /></div>
       ) : videos.length === 0 ? (
-        <div className="bg-palette-cream rounded-lg shadow-sm p-12 text-center border border-palette-mauve/20">
+        <div className="glass-panel rounded-3xl p-12 text-center border border-palette-mauve/20">
           <FiPlay className="mx-auto h-12 w-12 text-palette-dark/40" />
           <h3 className="mt-2 text-lg font-medium text-palette-dark">No videos assigned yet</h3>
           <p className="mt-1 text-sm text-palette-dark/60">
@@ -328,15 +329,15 @@ export default function PatientVideosPage() {
             return (
               <div
                 key={assignment.id}
-                className={`bg-palette-cream rounded-lg shadow-sm overflow-hidden border transition-shadow ${
+                className={`glass-panel rounded-3xl overflow-hidden border transition-shadow ${
                   isLocked || isDoneToday || isEnded
                     ? 'opacity-70 border-palette-mauve/10'
-                    : 'hover:shadow-md border-palette-mauve/20'
+                    : 'hover:shadow-lg border-palette-mauve/20'
                 }`}
               >
                 {/* Thumbnail */}
                 <div
-                  className="aspect-video bg-palette-beige relative group cursor-pointer"
+                  className="aspect-video bg-white/70 relative group cursor-pointer"
                   onClick={() => handleViewVideo(assignment)}
                 >
                   <img
@@ -388,14 +389,14 @@ export default function PatientVideosPage() {
 
                   {/* Therapist note */}
                   {assignment.notes && (
-                    <div className="mb-3 p-2 bg-palette-beige rounded text-sm border border-palette-mauve/20">
+                    <div className="mb-3 p-2 bg-white/70 rounded text-sm border border-palette-mauve/20">
                       <strong>Therapist Note:</strong> {assignment.notes}
                     </div>
                   )}
 
                   {/* Segment info */}
                   {Number.isInteger(assignment.segment_start_seconds) && Number.isInteger(assignment.segment_end_seconds) && (
-                    <div className="mb-3 p-2 bg-palette-beige rounded text-sm border border-palette-mauve/20">
+                    <div className="mb-3 p-2 bg-white/70 rounded text-sm border border-palette-mauve/20">
                       <strong>Watch:</strong> {formatSecondsToTimestamp(assignment.segment_start_seconds)} –{' '}
                       {formatSecondsToTimestamp(assignment.segment_end_seconds)} ×{assignment.repeat_count || 1}
                       {assignment.pause_between_repeats_seconds > 0 && `, ${assignment.pause_between_repeats_seconds}s pause`}
@@ -404,7 +405,7 @@ export default function PatientVideosPage() {
 
                   {/* Schedule summary for the card */}
                   {assignment.is_scheduled && (
-                    <div className="mb-3 p-2 bg-palette-beige rounded text-xs border border-palette-mauve/20 space-y-0.5">
+                    <div className="mb-3 p-2 bg-white/70 rounded text-xs border border-palette-mauve/20 space-y-0.5">
                       <div className="flex items-center gap-1 text-palette-dark/80">
                         <FiCalendar className="text-palette-mauve" />
                         {assignment.schedule_start_date} → {assignment.schedule_end_date}
@@ -449,12 +450,12 @@ export default function PatientVideosPage() {
 
                   <button
                     onClick={() => handleViewVideo(assignment)}
-                    className={`w-full px-4 py-2 rounded flex items-center justify-center gap-2 text-sm font-medium transition-colors ${
+                    className={`w-full px-4 py-2 rounded-2xl flex items-center justify-center gap-2 text-sm font-medium transition-colors ${
                       isLocked || isEnded
-                        ? 'bg-palette-beige text-palette-dark/70 hover:bg-palette-mauve/20'
+                        ? 'bg-white/70 text-palette-dark/70 hover:bg-palette-mauve/20'
                         : isDoneToday
                         ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                        : 'bg-palette-mauve text-white hover:bg-palette-dark'
+                        : 'btn-primary'
                     }`}
                   >
                     {isLocked ? (
@@ -477,7 +478,7 @@ export default function PatientVideosPage() {
       {/* Video Detail Modal */}
       {showDetailModal && selectedVideo && (
         <div className="fixed inset-0 bg-palette-dark/50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border border-palette-mauve/20 w-full max-w-4xl shadow-lg rounded-md bg-palette-cream">
+          <div className="relative top-20 mx-auto p-5 border border-palette-mauve/20 w-full max-w-4xl shadow-lg rounded-3xl glass-panel">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium text-palette-dark">
                 {selectedVideo.video_details.title}
@@ -500,7 +501,7 @@ export default function PatientVideosPage() {
                 />
               </div>
 
-              <div className="bg-palette-beige/60 p-4 rounded-lg border border-palette-mauve/20">
+              <div className="bg-white/70 p-4 rounded-2xl border border-palette-mauve/20">
                 <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
                   <div>
                     <p className="text-sm text-palette-dark/60">Assigned by</p>
@@ -523,14 +524,14 @@ export default function PatientVideosPage() {
                 </div>
 
                 {selectedVideo.notes && (
-                  <div className="mt-3 p-3 bg-palette-cream border-l-4 border-palette-mauve">
+                  <div className="mt-3 p-3 bg-white/80 border-l-4 border-palette-mauve rounded-xl">
                     <p className="text-sm font-medium text-palette-dark mb-1">Therapist Instructions:</p>
                     <p className="text-sm text-palette-dark/80">{selectedVideo.notes}</p>
                   </div>
                 )}
 
                 {Number.isInteger(selectedVideo.segment_start_seconds) && Number.isInteger(selectedVideo.segment_end_seconds) && (
-                  <div className="mt-3 p-3 bg-palette-cream border-l-4 border-palette-dark">
+                  <div className="mt-3 p-3 bg-white/80 border-l-4 border-palette-dark rounded-xl">
                     <p className="text-sm font-medium text-palette-dark mb-1">Playback Target:</p>
                     <p className="text-sm text-palette-dark/80">
                       {formatSecondsToTimestamp(selectedVideo.segment_start_seconds)} to{' '}
@@ -544,7 +545,7 @@ export default function PatientVideosPage() {
                 )}
 
                 {selectedVideo.is_scheduled && (
-                  <div className="mt-3 p-3 bg-palette-cream border-l-4 border-blue-400">
+                  <div className="mt-3 p-3 bg-white/80 border-l-4 border-blue-400 rounded-xl">
                     <p className="text-sm font-medium text-palette-dark mb-1">
                       <FiCalendar className="inline mr-1" /> Daily Schedule
                     </p>
@@ -564,7 +565,7 @@ export default function PatientVideosPage() {
                 )}
 
                 {(selectedVideo.today_log?.viewed || (!selectedVideo.is_scheduled && selectedVideo.viewed)) && (
-                  <div className="mt-3 p-3 bg-palette-cream border-l-4 border-green-500">
+                  <div className="mt-3 p-3 bg-white/80 border-l-4 border-green-500 rounded-xl">
                     <p className="text-sm font-medium text-palette-dark mb-2">Difficulty Level Today</p>
                     <div className="flex flex-wrap gap-2">
                       {[
@@ -615,7 +616,7 @@ export default function PatientVideosPage() {
             <div className="mt-6 flex justify-between items-center">
               <button
                 onClick={() => setShowDetailModal(false)}
-                className="px-6 py-2 text-sm font-medium text-palette-dark bg-palette-beige border border-palette-mauve/30 rounded-md hover:bg-palette-mauve/20"
+                className="btn-secondary"
               >
                 Close
               </button>
@@ -624,7 +625,7 @@ export default function PatientVideosPage() {
               {selectedVideo.is_scheduled && selectedVideo.is_available_today && !selectedVideo.today_log?.viewed && (
                 <button
                   onClick={handleMarkViewedFromModal}
-                  className="px-6 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 flex items-center gap-2"
+                  className="btn-primary"
                 >
                   <FiCheckCircle /> Mark as Watched Today
                 </button>

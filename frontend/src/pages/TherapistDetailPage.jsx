@@ -59,7 +59,7 @@ export default function TherapistDetailPage() {
 
   return (
       <div className="max-w-3xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="glass-panel rounded-[2rem] p-5 mb-6 flex items-center justify-between">
           <h1 className="text-3xl font-bold text-palette-dark">Therapist Details</h1>
           <Link to="/therapists" className="text-palette-mauve hover:underline">Back to list</Link>
         </div>
@@ -71,13 +71,13 @@ export default function TherapistDetailPage() {
         {loading ? (
           <Spinner />
         ) : therapist ? (
-          <div className="bg-palette-cream rounded-lg shadow p-6 border-l-4 border-palette-mauve">
+          <div className="glass-panel rounded-3xl p-6 border-l-4 border-palette-mauve">
             <div className="flex items-start gap-4">
               {therapist.profile?.profile_picture && (
                 <img
                   src={therapist.profile.profile_picture}
                   alt="Profile"
-                  className="w-24 h-24 rounded object-cover"
+                  className="w-24 h-24 rounded-2xl object-cover border border-palette-mauve/20"
                 />
               )}
               <div className="flex-1">
