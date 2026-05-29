@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { authAPI } from '../services/api';
+import { useEffect, useMemo, useState } from 'react';
+import { authAPI, appointmentAPI, nursingNotesAPI } from '../services/api';
 import { Alert } from '../components/Alert';
 import { Spinner } from '../components/Spinner';
 import { useAuth } from '../hooks/useAuth';
@@ -11,6 +11,22 @@ export default function PatientDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
+  const [appointments, setAppointments] = useState([]);
+  const [nursingNotes, setNursingNotes] = useState([]);
+
+  const extractList = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.results)) return payload.results;
+    if (Array.isArray(payload?.data?.results)) return payload.data.results;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload?.result)) return payload.result;
+    return [];
+  };
+
+  const followUpNotes = useMemo(
+    () => nursingNotes.filter((note) => note.note_type === 'FOLLOW_UP'),
+    [nursingNotes],
+  );
 
   useEffect(() => {
     fetchDashboard();
@@ -19,8 +35,16 @@ export default function PatientDashboardPage() {
   const fetchDashboard = async () => {
     try {
       setLoading(true);
-      const res = await authAPI.getPatientDashboard();
+      const [dashboardRes, appointmentsRes, notesRes] = await Promise.all([
+        authAPI.getPatientDashboard(),
+        appointmentAPI.getAppointments(),
+        nursingNotesAPI.getNotes(),
+      ]);
+
+      const res = dashboardRes;
       setDashboardData(res.data?.result || res.data || null);
+      setAppointments(extractList(appointmentsRes.data));
+      setNursingNotes(extractList(notesRes.data));
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load dashboard');
@@ -138,6 +162,74 @@ export default function PatientDashboardPage() {
           </Card>
         </Link>
       </div>
+
+      <Card className="space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-2xl font-bold text-palette-dark">Upcoming Appointments</h2>
+          <span className="rounded-full bg-palette-beige/40 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-palette-dark/70">
+            Schedule
+          </span>
+        </div>
+
+        {appointments.length > 0 ? (
+          <div className="space-y-3">
+            {appointments.slice(0, 5).map((appointment) => (
+              <div key={appointment.id} className="rounded-2xl border border-palette-mauve/15 bg-white/70 p-4">
+                <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="font-semibold text-palette-dark">{appointment.title}</p>
+                    <p className="text-sm text-palette-dark/70">
+                      {new Date(appointment.scheduled_for).toLocaleString()} • {appointment.duration_minutes} min
+                    </p>
+                    <p className="text-sm text-palette-dark/60">
+                      {appointment.appointment_type} • {appointment.is_virtual ? 'Virtual' : appointment.location || 'No location provided'}
+                    </p>
+                  </div>
+                  <span className="mt-2 md:mt-0 inline-flex rounded-full bg-palette-blush/30 px-3 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-palette-dark/70">
+                    {appointment.status}
+                  </span>
+                </div>
+                {appointment.notes && (
+                  <p className="mt-3 whitespace-pre-wrap text-sm text-palette-dark/70">{appointment.notes}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-palette-dark/70">No appointments scheduled yet.</p>
+        )}
+      </Card>
+
+      <Card className="space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-2xl font-bold text-palette-dark">Follow-up Notes</h2>
+          <span className="rounded-full bg-palette-mauve/15 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-palette-dark/70">
+            From nurse
+          </span>
+        </div>
+
+        {followUpNotes.length > 0 ? (
+          <div className="space-y-3">
+            {followUpNotes.map((note) => (
+              <div key={note.id} className="rounded-2xl border border-palette-mauve/15 bg-white/70 p-4">
+                <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
+                  <p className="font-semibold text-palette-dark">
+                    {note.nurse_details?.first_name || note.nurse_details?.last_name
+                      ? `${note.nurse_details?.first_name || ''} ${note.nurse_details?.last_name || ''}`.trim()
+                      : note.nurse_details?.email || 'Nurse'}
+                  </p>
+                  <p className="text-xs text-palette-dark/60">
+                    {note.created_at ? new Date(note.created_at).toLocaleString() : ''}
+                  </p>
+                </div>
+                <p className="mt-3 whitespace-pre-wrap text-sm text-palette-dark/80">{note.text}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-palette-dark/70">No follow-up notes yet.</p>
+        )}
+      </Card>
     </div>
   );
 }

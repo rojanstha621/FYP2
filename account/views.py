@@ -21,6 +21,8 @@ from .serializers import (
     ChangePasswordSerializer,
     RegisterSerializer,
     VerifyEmailSerializer,
+    PasswordResetRequestSerializer,
+    PasswordResetConfirmSerializer,
     AdminUserListSerializer,
     AdminUserDetailSerializer,
     AdminUserUpdateSerializer,
@@ -238,6 +240,36 @@ class VerifyEmailView(APIView):
         return APIResponse.send(
             is_success=True,
             message="Email verified successfully. You can now log in.",
+            status_code=status.HTTP_200_OK,
+        )
+
+
+class PasswordResetRequestView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return APIResponse.send(
+            is_success=True,
+            message="If an account with that email exists, a password reset link has been sent.",
+            status_code=status.HTTP_200_OK,
+        )
+
+
+class PasswordResetConfirmView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return APIResponse.send(
+            is_success=True,
+            message="Password reset successful. You can now log in.",
             status_code=status.HTTP_200_OK,
         )
 

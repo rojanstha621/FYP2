@@ -382,6 +382,12 @@ class DailyVideoLog(models.Model):
         help_text=_("Exact datetime when the patient viewed the video on this date")
     )
 
+    unlock_email_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("When the daily unlock email was sent for this date")
+    )
+
     difficulty_level = models.CharField(
         max_length=10,
         choices=DifficultyLevel.choices,

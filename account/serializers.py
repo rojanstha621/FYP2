@@ -22,6 +22,14 @@ def build_verification_link(user, request=None):
     return f"{frontend_base}{path}"
 
 
+def build_password_reset_link(user, request=None):
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    token = default_token_generator.make_token(user)
+    frontend_base = getattr(settings, "FRONTEND_URL", "http://localhost:5173").rstrip("/")
+    path = f"/reset-password?uid={uid}&token={token}"
+    return f"{frontend_base}{path}"
+
+
 def send_verification_email(user, request=None):
     verification_link = build_verification_link(user, request=request)
     subject = "Verify your email address"
@@ -54,6 +62,44 @@ def send_verification_email(user, request=None):
             {
                 "detail": (
                     "Verification email could not be sent. Check the SMTP host, port, "
+                    "TLS setting, and sender credentials."
+                )
+            }
+        ) from exc
+
+
+def send_password_reset_email(user, request=None):
+    reset_link = build_password_reset_link(user, request=request)
+    subject = "Reset your password"
+    message = (
+        f"Hi {user.first_name},\n\n"
+        f"You can reset your password by opening this link:\n{reset_link}\n\n"
+        "If you did not request a password reset, you can ignore this email."
+    )
+
+    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=from_email,
+            recipient_list=[user.email],
+            fail_silently=False,
+        )
+    except SMTPAuthenticationError as exc:
+        raise serializers.ValidationError(
+            {
+                "detail": (
+                    "Email authentication failed. Check DJANGO_EMAIL_HOST_USER and "
+                    "DJANGO_EMAIL_HOST_PASSWORD in your .env file."
+                )
+            }
+        ) from exc
+    except SMTPException as exc:
+        raise serializers.ValidationError(
+            {
+                "detail": (
+                    "Password reset email could not be sent. Check the SMTP host, port, "
                     "TLS setting, and sender credentials."
                 )
             }
@@ -235,6 +281,52 @@ class ChangePasswordSerializer(serializers.Serializer):
         user.set_password(new_password)
         user.save(update_fields=["password"])
         return {}
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def save(self, **kwargs):
+        email = self.validated_data["email"]
+        request = self.context.get("request")
+        user = User.objects.filter(email__iexact=email, is_active=True).first()
+
+        if user:
+            send_password_reset_email(user, request=request)
+
+        return {}
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    new_password = serializers.CharField(write_only=True, validators=[validate_password])
+    confirm_new_password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        if attrs.get("new_password") != attrs.get("confirm_new_password"):
+            raise serializers.ValidationError({"confirm_new_password": "Passwords do not match"})
+
+        uid = attrs.get("uid")
+        token = attrs.get("token")
+
+        try:
+            user_id = force_str(urlsafe_base64_decode(uid))
+            user = User.objects.get(pk=user_id)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            raise serializers.ValidationError({"detail": "Invalid password reset link."})
+
+        if not default_token_generator.check_token(user, token):
+            raise serializers.ValidationError({"detail": "Password reset link is invalid or expired."})
+
+        attrs["user"] = user
+        return attrs
+
+    def save(self, **kwargs):
+        user = self.validated_data["user"]
+        user.set_password(self.validated_data["new_password"])
+        user.save(update_fields=["password"])
+        return user
 
 
 class RegisterSerializer(serializers.ModelSerializer):

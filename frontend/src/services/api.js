@@ -73,6 +73,8 @@ apiClient.interceptors.response.use(
 export const authAPI = {
   register: (data) => apiClient.post('/api/account/register/', data),
   verifyEmail: (data) => apiClient.post('/api/account/verify-email/', data),
+  requestPasswordReset: (data) => apiClient.post('/api/account/password-reset/request/', data),
+  confirmPasswordReset: (data) => apiClient.post('/api/account/password-reset/confirm/', data),
   login: (email, password) =>
     apiClient.post('/api/account/login/', { email, password }),
   logout: (refreshToken) =>
@@ -103,6 +105,10 @@ export const medicalAPI = {
     apiClient.patch(`/api/medicals/medical-history/${id}/`, data),
   deleteMedicalHistory: (id) =>
     apiClient.delete(`/api/medicals/medical-history/${id}/`),
+};
+
+export const appointmentAPI = {
+  getAppointments: () => apiClient.get('/api/medicals/appointments/'),
 };
 
 export const nurseAPI = {

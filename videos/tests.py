@@ -1,5 +1,9 @@
 from django.test import TestCase
+from django.test import override_settings
+from django.core import mail
 from django.urls import reverse
+from django.core.management import call_command
+from django.utils import timezone
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from account.models import User
@@ -407,4 +411,62 @@ class VideoAssignmentTest(APITestCase):
         assignment.refresh_from_db()
         self.assertTrue(assignment.viewed)
         self.assertIsNotNone(assignment.viewed_at)
+
+
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+class DailyUnlockEmailCommandTest(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            email="admin@test.com",
+            password="testpass123",
+            first_name="Admin",
+            role="ADMIN",
+            is_staff=True,
+        )
+        self.therapist = User.objects.create_user(
+            email="therapist@test.com",
+            password="testpass123",
+            first_name="Therapist",
+            role="THERAPIST",
+            therapist_status="APPROVED",
+            is_therapist_approved=True,
+        )
+        self.patient = User.objects.create_user(
+            email="patient@test.com",
+            password="testpass123",
+            first_name="Patient",
+            role="PATIENT",
+        )
+        TherapistPatientAssignment.objects.create(
+            therapist=self.therapist,
+            patient=self.patient,
+            is_active=True,
+        )
+        self.video = Video.objects.create(
+            title="Scheduled Video",
+            youtube_url="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            is_active=True,
+            created_by=self.admin,
+        )
+        self.assignment = VideoAssignment.objects.create(
+            video=self.video,
+            therapist=self.therapist,
+            patient=self.patient,
+            is_active=True,
+            schedule_start_date=timezone.localdate(),
+            schedule_duration_days=3,
+            scheduled_time=timezone.datetime.min.time(),
+        )
+
+    def test_command_sends_unlock_email_once(self):
+        call_command("send_daily_video_unlock_emails")
+
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("daily video is unlocked", mail.outbox[0].subject.lower())
+
+        log = self.assignment.daily_logs.get(scheduled_date=timezone.localdate())
+        self.assertIsNotNone(log.unlock_email_sent_at)
+
+        call_command("send_daily_video_unlock_emails")
+        self.assertEqual(len(mail.outbox), 1)
 

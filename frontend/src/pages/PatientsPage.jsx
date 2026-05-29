@@ -18,6 +18,17 @@ export const PatientsPage = () => {
   const [success, setSuccess] = useState('');
   const [nurseAssignments, setNurseAssignments] = useState([]);
 
+  const extractList = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.results)) return payload.results;
+    if (Array.isArray(payload?.data?.results)) return payload.data.results;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload?.result)) return payload.result;
+    return [];
+  };
+
+  const getPatientId = (assignment) => String(assignment?.patient?.id || assignment?.patient || '');
+
   useEffect(() => {
     fetchPatients();
   }, []);
@@ -30,20 +41,22 @@ export const PatientsPage = () => {
         nurseAPI.getAssignments(),
       ]);
 
-      const assignments = response.data.result || response.data || [];
+      const assignments = extractList(response.data);
       const directory = directoryResponse.data?.result || directoryResponse.data || {};
       setNurses(Array.isArray(directory?.nurses) ? directory.nurses : []);
-      const nurseAssignmentData = nurseAssignmentsResponse.data?.result || nurseAssignmentsResponse.data || [];
-      setNurseAssignments(Array.isArray(nurseAssignmentData) ? nurseAssignmentData : []);
+      setNurseAssignments(extractList(nurseAssignmentsResponse.data));
 
       const uniquePatients = [];
       const patientIds = new Set();
 
       assignments.forEach(assignment => {
-        if (!patientIds.has(assignment.patient) && assignment.is_active) {
-          patientIds.add(assignment.patient);
-          uniquePatients.push(assignment);
+        const patientId = getPatientId(assignment);
+        if (!patientId || patientIds.has(patientId) || !assignment.is_active) {
+          return;
         }
+
+        patientIds.add(patientId);
+          uniquePatients.push(assignment);
       });
 
       setPatients(uniquePatients);
@@ -59,8 +72,9 @@ export const PatientsPage = () => {
     nurseAssignments
       .filter((assignment) => assignment.is_active !== false)
       .forEach((assignment) => {
-        const patientId = assignment.patient;
+        const patientId = String(assignment?.patient?.id || assignment?.patient || '');
         const nurse = assignment.nurse_details;
+        if (!patientId) return;
         if (!map.has(patientId)) {
           map.set(patientId, []);
         }
@@ -70,7 +84,7 @@ export const PatientsPage = () => {
   }, [nurseAssignments]);
 
   const formatAssignedNurses = (patientId) => {
-    const nursesForPatient = nursesByPatientId.get(patientId) || [];
+    const nursesForPatient = nursesByPatientId.get(String(patientId)) || [];
     if (!nursesForPatient.length) return 'No nurse assigned yet';
 
     return nursesForPatient
@@ -151,7 +165,7 @@ export const PatientsPage = () => {
             </p>
 
             <p className="text-palette-dark/70 text-sm mb-4">
-              Nurse: {formatAssignedNurses(assignment.patient)}
+              Nurse: {formatAssignedNurses(getPatientId(assignment))}
             </p>
 
             <div className="flex gap-2">
@@ -249,7 +263,7 @@ export const PatientsPage = () => {
                 </p>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-[1fr_auto] items-end">
+              <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
                 <Select
                   label="Nurse"
                   value={assignmentNurseId}
@@ -267,6 +281,7 @@ export const PatientsPage = () => {
                 <Button
                   type="button"
                   variant="primary"
+                  className="w-full md:w-auto md:min-h-[56px] mb-4"
                   onClick={handleAssignNurse}
                   disabled={!assignmentNurseId}
                 >

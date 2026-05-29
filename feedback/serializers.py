@@ -1,11 +1,13 @@
 from rest_framework import serializers
 
+from account.serializers import UserBasicSerializer
 from medicals.models import TherapistPatientAssignment
 
 from .models import Feedback
 
 
 class FeedbackSerializer(serializers.ModelSerializer):
+    therapist_details = UserBasicSerializer(source="therapist", read_only=True)
     therapist = serializers.PrimaryKeyRelatedField(read_only=True)
     patient = serializers.PrimaryKeyRelatedField(read_only=True)
 

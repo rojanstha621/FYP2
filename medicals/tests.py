@@ -5,7 +5,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from medicals.models import NursePatientAssignment, TherapistPatientAssignment
+from medicals.models import Appointment, NursePatientAssignment, TherapistPatientAssignment
 
 
 User = get_user_model()
@@ -105,6 +105,92 @@ class NurseWorkflowTests(APITestCase):
 		self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 		self.assertEqual(str(response.data["data"]["patient"]), str(self.patient.id))
 		self.assertEqual(str(response.data["data"]["created_by_nurse"]), str(self.nurse.id))
+
+	def test_nurse_created_appointment_shows_for_patient_and_therapist(self):
+		NursePatientAssignment.objects.create(nurse=self.nurse, patient=self.patient, is_active=True)
+		TherapistPatientAssignment.objects.create(
+			therapist=self.therapist,
+			patient=self.patient,
+			is_active=True,
+		)
+		self.client.force_authenticate(user=self.nurse)
+
+		scheduled_for = timezone.now() + timedelta(days=1)
+		response = self.client.post(
+			"/api/medicals/appointments/",
+			{
+				"patient": str(self.patient.id),
+				"title": "Follow-up visit",
+				"appointment_type": "FOLLOW_UP",
+				"scheduled_for": scheduled_for.isoformat(),
+				"duration_minutes": 30,
+				"location": "Room 2",
+				"is_virtual": False,
+				"notes": "Bring updated reports",
+			},
+			format="json",
+		)
+
+		self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+		self.assertEqual(str(response.data["data"]["therapist"]), str(self.therapist.id))
+
+		appointment_id = response.data["data"]["id"]
+
+		self.client.force_authenticate(user=self.patient)
+		patient_response = self.client.get("/api/medicals/appointments/")
+		self.assertEqual(patient_response.status_code, status.HTTP_200_OK)
+		patient_items = patient_response.data.get("results") or patient_response.data.get("data") or patient_response.data.get("result") or patient_response.data
+		self.assertTrue(any(item["id"] == appointment_id for item in patient_items))
+
+		self.client.force_authenticate(user=self.therapist)
+		therapist_response = self.client.get("/api/medicals/appointments/")
+		self.assertEqual(therapist_response.status_code, status.HTTP_200_OK)
+		therapist_items = therapist_response.data.get("results") or therapist_response.data.get("data") or therapist_response.data.get("result") or therapist_response.data
+		self.assertTrue(any(item["id"] == appointment_id for item in therapist_items))
+
+	def test_therapist_sees_patient_appointments_without_direct_therapist_link(self):
+		NursePatientAssignment.objects.create(nurse=self.nurse, patient=self.patient, is_active=True)
+		TherapistPatientAssignment.objects.create(
+			therapist=self.therapist,
+			patient=self.patient,
+			is_active=True,
+		)
+		appointment = Appointment.objects.create(
+			nurse=self.nurse,
+			patient=self.patient,
+			title="Shared follow-up",
+			appointment_type="FOLLOW_UP",
+			scheduled_for=timezone.now() + timedelta(days=1),
+			duration_minutes=30,
+			location="Room 6",
+			is_virtual=False,
+			notes="Therapist should see this via assignment",
+		)
+
+		self.client.force_authenticate(user=self.therapist)
+		response = self.client.get("/api/medicals/appointments/")
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		items = response.data.get("results") or response.data.get("data") or response.data.get("result") or response.data
+		self.assertTrue(any(item["id"] == appointment.id for item in items))
+
+	def test_patient_can_create_own_medical_history(self):
+		self.client.force_authenticate(user=self.patient)
+
+		response = self.client.post(
+			"/api/medicals/medical-history/",
+			{
+				"past_injuries": "Knee strain",
+				"chronic_conditions": "None",
+				"surgeries": "None",
+				"medications": "None",
+				"allergies": "Dust",
+				"current_symptoms": "Occasional pain",
+			},
+			format="json",
+		)
+
+		self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+		self.assertEqual(str(response.data["data"]["patient"]), str(self.patient.id))
 
 	def test_nurse_can_create_appointment_for_assigned_patient(self):
 		NursePatientAssignment.objects.create(nurse=self.nurse, patient=self.patient, is_active=True)

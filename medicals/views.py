@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db.models import Q
 
 from myproject.utils import APIResponse
 from .models import MedicalHistory, TherapistPatientAssignment, NursePatientAssignment, Appointment, Vitals, NursingNote
@@ -96,17 +97,38 @@ class MedicalHistoryViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """
-        Create medical history. Nurses and admins can create records.
+        Create medical history.
+        Patients can create their own record.
+        Nurses and admins can create records for patients.
         """
-        if request.user.role not in ["NURSE", "ADMIN"]:
+        if request.user.role not in ["PATIENT", "NURSE", "ADMIN"]:
             return APIResponse.send(
                 is_success=False,
-                message="Only nurses or admins can create medical history",
+                message="Only patients, nurses, or admins can create medical history",
                 status_code=status.HTTP_403_FORBIDDEN,
             )
 
-        serializer = self.get_serializer(data=request.data)
+        payload = request.data.copy()
+        if request.user.role == "PATIENT":
+            payload["patient"] = str(request.user.id)
+
+        serializer = self.get_serializer(data=payload)
         serializer.is_valid(raise_exception=True)
+
+        if request.user.role == "PATIENT":
+            if MedicalHistory.objects.filter(patient=request.user).exists():
+                return APIResponse.send(
+                    is_success=False,
+                    message="Medical history already exists for this patient",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+            serializer.save(patient=request.user)
+            return APIResponse.send(
+                is_success=True,
+                message="Medical history created successfully",
+                result=serializer.data,
+                status_code=status.HTTP_201_CREATED,
+            )
 
         if request.user.role == "NURSE":
             patient = serializer.validated_data["patient"]
@@ -800,7 +822,13 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         if user.role == "NURSE":
             return queryset.filter(nurse=user)
         if user.role == "THERAPIST":
-            return queryset.filter(therapist=user)
+            assigned_patient_ids = TherapistPatientAssignment.objects.filter(
+                therapist=user,
+                is_active=True,
+            ).values_list("patient_id", flat=True)
+            return queryset.filter(
+                Q(therapist=user) | Q(patient_id__in=assigned_patient_ids)
+            ).distinct()
         if user.role == "PATIENT":
             return queryset.filter(patient=user)
         return queryset.none()

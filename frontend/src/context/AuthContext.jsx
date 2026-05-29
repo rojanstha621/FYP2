@@ -58,13 +58,16 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.getMe();
       const payload = response.data?.result || response.data;
       // Store flattened user + profile picture for avatar rendering.
-      setUser(buildUserWithProfile(payload));
+      const currentUser = buildUserWithProfile(payload);
+      setUser(currentUser);
       setError(null);
+      return currentUser;
     } catch (err) {
       console.error('Failed to fetch user:', err);
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       setUser(null);
+      return null;
     } finally {
       setLoading(false);
     }
@@ -85,8 +88,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('access_token', access);
       localStorage.setItem('refresh_token', refresh);
 
-      await fetchCurrentUser();
-      return true;
+      return await fetchCurrentUser();
     } catch (err) {
       const message = extractErrorMessage(err, 'Login failed');
       setError(message);

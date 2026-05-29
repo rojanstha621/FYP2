@@ -181,7 +181,7 @@ export const MedicalHistoryPage = () => {
                   placeholder="Describe any past injuries (e.g., broken bones, sprains, etc.)"
                   value={formData.past_injuries || ''}
                   onChange={handleChange}
-                  rows="3"
+                  style={{ minHeight: '40px', height: '40px' }}
                 />
               </div>
 
@@ -195,7 +195,7 @@ export const MedicalHistoryPage = () => {
                   placeholder="List any chronic conditions (e.g., diabetes, arthritis, etc.)"
                   value={formData.chronic_conditions || ''}
                   onChange={handleChange}
-                  rows="3"
+                  style={{ minHeight: '40px', height: '40px' }}
                 />
               </div>
 
@@ -209,7 +209,7 @@ export const MedicalHistoryPage = () => {
                   placeholder="Describe any surgeries you've had (e.g., knee surgery, cardiac surgery, etc.)"
                   value={formData.surgeries || ''}
                   onChange={handleChange}
-                  rows="3"
+                  style={{ minHeight: '40px', height: '40px' }}
                 />
               </div>
 
@@ -223,7 +223,7 @@ export const MedicalHistoryPage = () => {
                   placeholder="List all current medications with dosages (e.g., Aspirin 100mg daily)"
                   value={formData.medications || ''}
                   onChange={handleChange}
-                  rows="3"
+                  style={{ minHeight: '40px', height: '40px' }}
                 />
               </div>
 
@@ -237,7 +237,7 @@ export const MedicalHistoryPage = () => {
                   placeholder="List any allergies (e.g., penicillin, peanuts, etc.)"
                   value={formData.allergies || ''}
                   onChange={handleChange}
-                  rows="3"
+                  style={{ minHeight: '40px', height: '40px' }}
                 />
               </div>
 
@@ -251,7 +251,7 @@ export const MedicalHistoryPage = () => {
                   placeholder="Describe your current symptoms (e.g., pain, swelling, weakness, etc.)"
                   value={formData.current_symptoms || ''}
                   onChange={handleChange}
-                  rows="3"
+                  style={{ minHeight: '40px', height: '40px' }}
                 />
               </div>
 

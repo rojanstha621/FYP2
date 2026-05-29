@@ -10,12 +10,12 @@ const roleLinks = {
     { to: '/medical-history', label: 'Medical History' },
   ],
   THERAPIST: [
+    { to: '/therapist/dashboard', label: 'Dashboard' },
     { to: '/patients', label: 'My Patients' },
     { to: '/therapist/pending-requests', label: 'Pending Requests' },
     { to: '/therapist/nurse-assignments', label: 'Nurse Assignments' },
     { to: '/assignments', label: 'Assignments' },
     { to: '/therapist/videos', label: 'Videos' },
-    { to: '/therapist/overview', label: 'Overview' },
     { to: '/therapist/feedback', label: 'Feedback' },
   ],
   NURSE: [
@@ -55,9 +55,10 @@ export const Sidebar = () => {
         </h2>
         <nav className="space-y-2">
           {links.map((link) => {
+            const isDashboardLink = link.label === 'Dashboard' || link.to.endsWith('/dashboard') || link.to === '/nurse';
             const isActive =
               location.pathname === link.to ||
-              (link.to !== '/' && location.pathname.startsWith(link.to + '/'));
+              (!isDashboardLink && link.to !== '/' && location.pathname.startsWith(link.to + '/'));
 
             return (
               <Link

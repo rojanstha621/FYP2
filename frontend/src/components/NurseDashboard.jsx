@@ -4,6 +4,7 @@ import { Card, Button, Select, Textarea } from './FormElements';
 
 export default function NurseDashboard(){
   const [appointments, setAppointments] = useState([]);
+  const [nurseAssignments, setNurseAssignments] = useState([]);
   const [therapistAssignments, setTherapistAssignments] = useState([]);
   const [patients, setPatients] = useState([]);
   const [patientId, setPatientId] = useState('');
@@ -20,15 +21,25 @@ export default function NurseDashboard(){
     return [];
   };
 
+  const getEntityId = (entity) => String(entity?.id || entity || '');
+  const getPatientId = (assignment) => String(assignment?.patient?.id || assignment?.patient || '');
+  const getTherapistName = (assignment) => {
+    const therapist = assignment?.therapist_details || assignment?.therapist;
+    const fullName = `${therapist?.first_name || ''} ${therapist?.last_name || ''}`.trim();
+    return fullName || therapist?.email || 'No therapist assigned yet';
+  };
+
   async function fetchDashboardData(){
     try{
-      const [appointmentsRes, therapistAssignmentsRes, directoryRes] = await Promise.all([
+      const [appointmentsRes, nurseAssignmentsRes, therapistAssignmentsRes, directoryRes] = await Promise.all([
         nurseAPI.getAppointments(),
+        nurseAPI.getAssignments(),
         assignmentAPI.getAssignments(),
         nurseAPI.getDirectory(),
       ]);
 
       setAppointments(extractList(appointmentsRes.data || appointmentsRes));
+      setNurseAssignments(extractList(nurseAssignmentsRes.data || nurseAssignmentsRes).filter((assignment) => assignment.is_active !== false));
       setTherapistAssignments(extractList(therapistAssignmentsRes.data || therapistAssignmentsRes).filter((assignment) => assignment.is_active !== false));
       const directory = directoryRes.data?.result || directoryRes.data || {};
       setPatients(Array.isArray(directory?.patients) ? directory.patients : []);
@@ -38,14 +49,23 @@ export default function NurseDashboard(){
   const assignmentRows = useMemo(() => therapistAssignments.map((assignment) => ({
     id: assignment.id,
     patientName: `${assignment.patient_details?.first_name || ''} ${assignment.patient_details?.last_name || ''}`.trim() || assignment.patient_details?.email || 'Unknown patient',
-    therapistName: `${assignment.therapist_details?.first_name || ''} ${assignment.therapist_details?.last_name || ''}`.trim() || assignment.therapist_details?.email || 'Unknown therapist',
+    therapistName: getTherapistName(assignment),
     assignedAt: assignment.assigned_at,
   })), [therapistAssignments]);
 
   const therapistAssignedPatients = useMemo(() => {
-    const assignedIds = new Set(therapistAssignments.map((assignment) => assignment.patient));
+    const assignedIds = new Set(nurseAssignments.map((assignment) => getPatientId(assignment)));
     return patients.filter((patient) => assignedIds.has(patient.id));
-  }, [patients, therapistAssignments]);
+  }, [patients, nurseAssignments]);
+
+  const upcomingAppointments = useMemo(() => {
+    const now = new Date();
+    return appointments.filter((appointment) => {
+      if (appointment?.status === 'CANCELLED') return false;
+      if (!appointment?.scheduled_for) return true;
+      return new Date(appointment.scheduled_for) >= now;
+    });
+  }, [appointments]);
 
   async function handleCheckIn(id){
     try{ await nurseAPI.checkInAppointment(id); fetchDashboardData(); }catch(e){console.error(e)}
@@ -113,15 +133,23 @@ export default function NurseDashboard(){
       <Card>
         <h3 className="font-semibold">Upcoming Appointments</h3>
         <ul className="mt-3">
-          {appointments.map(a=> (
+          {upcomingAppointments.map((a)=> (
             <li key={a.id} className="py-2 border-b">
-              <div>{a.title} — {a.scheduled_for} — {a.patient_details?.first_name} {a.patient_details?.last_name}</div>
+              <div>
+                {a.title} — {a.scheduled_for} — {a.patient_details?.first_name} {a.patient_details?.last_name}
+              </div>
+              <div className="text-sm text-palette-dark/60">
+                {a.therapist_details ? `${a.therapist_details.first_name} ${a.therapist_details.last_name}` : 'No therapist assigned yet'}
+              </div>
               <div className="space-x-2 mt-1">
                 <button onClick={()=>handleCheckIn(a.id)} className="btn">Check-in</button>
                 <button onClick={()=>handleAssignDoctor(a.id)} className="btn">Assign doctor</button>
               </div>
             </li>
           ))}
+          {upcomingAppointments.length === 0 && (
+            <li className="py-2 text-sm text-palette-dark/60">No upcoming appointments.</li>
+          )}
         </ul>
       </Card>
 

@@ -28,9 +28,17 @@ export const LoginPage = () => {
       return;
     }
 
-    const success = await login(formData.email, formData.password);
-    if (success) {
-      navigate('/');
+    const currentUser = await login(formData.email, formData.password);
+    if (currentUser) {
+      const nextRoute = currentUser.role === 'THERAPIST'
+        ? '/therapist/dashboard'
+        : currentUser.role === 'NURSE'
+          ? '/nurse'
+          : currentUser.role === 'ADMIN'
+            ? '/admin/dashboard'
+            : '/dashboard';
+
+      navigate(nextRoute);
     }
   };
 
@@ -95,7 +103,12 @@ export const LoginPage = () => {
             If you just registered, open the verification email first and then return here.
           </p>
 
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center space-y-3">
+            <div className="flex justify-end">
+              <Link to="/forgot-password" className="text-sm font-medium text-palette-mauve hover:text-palette-dark">
+                Forgot password?
+              </Link>
+            </div>
             <p className="text-palette-dark/70">
               Don't have an account?{' '}
               <Link to="/register" className="text-palette-mauve hover:text-palette-dark font-semibold">

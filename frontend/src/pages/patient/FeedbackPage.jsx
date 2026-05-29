@@ -8,6 +8,15 @@ export default function FeedbackPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const getTherapistLabel = (item) => {
+    const therapist = item?.therapist_details || item?.therapist;
+    const fullName = `${therapist?.first_name || ''} ${therapist?.last_name || ''}`.trim();
+
+    if (fullName) return fullName;
+    if (therapist?.email) return therapist.email;
+    return 'Therapist';
+  };
+
   const loadFeedback = async () => {
     try {
       setLoading(true);
@@ -72,7 +81,7 @@ export default function FeedbackPage() {
             >
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-sm font-semibold text-palette-dark">
-                  Therapist #{item.therapist}
+                  {getTherapistLabel(item)}
                 </p>
                 <p className="text-xs text-palette-dark/60">
                   {item.created_at ? new Date(item.created_at).toLocaleString() : ''}

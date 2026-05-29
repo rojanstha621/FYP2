@@ -394,12 +394,12 @@ export const NursePatientsPage = () => {
             </div>
 
             <form onSubmit={handleHistorySubmit} className="space-y-4">
-              <Textarea name="past_injuries" label="Past Injuries" value={historyForm.past_injuries} onChange={(e) => setHistoryForm({ ...historyForm, past_injuries: e.target.value })} />
-              <Textarea name="chronic_conditions" label="Chronic Conditions" value={historyForm.chronic_conditions} onChange={(e) => setHistoryForm({ ...historyForm, chronic_conditions: e.target.value })} />
-              <Textarea name="surgeries" label="Surgeries" value={historyForm.surgeries} onChange={(e) => setHistoryForm({ ...historyForm, surgeries: e.target.value })} />
-              <Textarea name="medications" label="Medications" value={historyForm.medications} onChange={(e) => setHistoryForm({ ...historyForm, medications: e.target.value })} />
-              <Textarea name="allergies" label="Allergies" value={historyForm.allergies} onChange={(e) => setHistoryForm({ ...historyForm, allergies: e.target.value })} />
-              <Textarea name="current_symptoms" label="Current Symptoms" value={historyForm.current_symptoms} onChange={(e) => setHistoryForm({ ...historyForm, current_symptoms: e.target.value })} />
+              <Textarea name="past_injuries" label="Past Injuries" value={historyForm.past_injuries} onChange={(e) => setHistoryForm({ ...historyForm, past_injuries: e.target.value })} style={{ minHeight: '40px', height: '40px' }} />
+              <Textarea name="chronic_conditions" label="Chronic Conditions" value={historyForm.chronic_conditions} onChange={(e) => setHistoryForm({ ...historyForm, chronic_conditions: e.target.value })} style={{ minHeight: '40px', height: '40px' }} />
+              <Textarea name="surgeries" label="Surgeries" value={historyForm.surgeries} onChange={(e) => setHistoryForm({ ...historyForm, surgeries: e.target.value })} style={{ minHeight: '40px', height: '40px' }} />
+              <Textarea name="medications" label="Medications" value={historyForm.medications} onChange={(e) => setHistoryForm({ ...historyForm, medications: e.target.value })} style={{ minHeight: '40px', height: '40px' }} />
+              <Textarea name="allergies" label="Allergies" value={historyForm.allergies} onChange={(e) => setHistoryForm({ ...historyForm, allergies: e.target.value })} style={{ minHeight: '40px', height: '40px' }} />
+              <Textarea name="current_symptoms" label="Current Symptoms" value={historyForm.current_symptoms} onChange={(e) => setHistoryForm({ ...historyForm, current_symptoms: e.target.value })} style={{ minHeight: '40px', height: '40px' }} />
 
               <div className="flex gap-4 pt-4">
                 <Button type="submit" variant="primary" className="flex-1" disabled={savingHistory}>

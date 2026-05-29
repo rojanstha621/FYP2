@@ -453,9 +453,7 @@ export default function TherapistVideosPage() {
       setSuccess('Video assigned successfully');
       setShowAssignModal(false);
       resetAssignmentForm();
-      if (activeTab === 'assignments') {
-        fetchAssignments();
-      }
+      window.location.reload();
     } catch (err) {
       setError(err.response?.data?.message || err.response?.data?.detail || 'Failed to assign video');
     }
@@ -526,24 +524,6 @@ export default function TherapistVideosPage() {
       ...prev,
       [name]: value
     }));
-  };
-
-  const handleSegmentSliderChange = (name, value) => {
-    setAssignmentData((prev) => {
-      const next = { ...prev, [name]: formatSecondsToTimestamp(value) };
-      const start = parseTimestampInput(next.segment_start);
-      const end = parseTimestampInput(next.segment_end);
-
-      if (Number.isInteger(start) && Number.isInteger(end) && end <= start) {
-        if (name === 'segment_start') {
-          next.segment_end = formatSecondsToTimestamp(Math.min(start + 1, segmentSliderMaxSeconds));
-        } else {
-          next.segment_start = formatSecondsToTimestamp(Math.max(end - 1, 0));
-        }
-      }
-
-      return next;
-    });
   };
 
   const sliderStartRaw = parseTimestampInput(assignmentData.segment_start);
@@ -901,7 +881,7 @@ export default function TherapistVideosPage() {
                 </div>
 
                 <div className="space-y-3 border border-white/10 bg-white/5 rounded-2xl p-3 md:p-4">
-                  <p className="text-sm font-medium text-white/85">Segment Picker</p>
+                  <p className="text-sm font-medium text-white/85">Segment Preview</p>
                   <div className="aspect-video w-full overflow-hidden rounded-xl bg-black">
                     <iframe
                       key={previewEmbedUrl}
@@ -923,24 +903,6 @@ export default function TherapistVideosPage() {
                         ? 'Detecting video length...'
                         : `Video length: ${formatSecondsToTimestamp(safeSliderMaxSeconds)}`}
                     </p>
-                    <label className="block text-xs text-white/70 mb-1">Start Slider</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max={String(safeSliderMaxSeconds - 1)}
-                      value={sliderStartValue}
-                      onChange={(e) => handleSegmentSliderChange('segment_start', Number(e.target.value))}
-                      className="w-full accent-palette-blush"
-                    />
-                    <label className="block text-xs text-white/70 mb-1 mt-3">End Slider</label>
-                    <input
-                      type="range"
-                      min={String(sliderStartValue + 1)}
-                      max={String(safeSliderMaxSeconds)}
-                      value={sliderEndValue}
-                      onChange={(e) => handleSegmentSliderChange('segment_end', Number(e.target.value))}
-                      className="w-full accent-palette-blush"
-                    />
                   </div>
                 </div>
               </div>

@@ -305,6 +305,18 @@ class AppointmentCreateSerializer(serializers.ModelSerializer):
         if therapist and getattr(therapist, "role", None) != "THERAPIST":
             raise serializers.ValidationError({"therapist": "Assigned user must be a therapist."})
 
+        if therapist is None and patient:
+            active_therapists = TherapistPatientAssignment.objects.filter(
+                patient=patient,
+                is_active=True,
+            ).select_related("therapist")
+            therapist_ids = list(
+                active_therapists.values_list("therapist_id", flat=True).distinct()
+            )
+            if len(therapist_ids) == 1:
+                attrs["therapist"] = active_therapists.first().therapist
+                therapist = attrs["therapist"]
+
         nurse_assignment_exists = NursePatientAssignment.objects.filter(
             nurse=nurse,
             patient=patient,

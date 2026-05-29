@@ -5,6 +5,8 @@ from .views import (
     LogoutView,
     MeView,
     ChangePasswordView,
+    PasswordResetRequestView,
+    PasswordResetConfirmView,
     RegisterView,
     VerifyEmailView,
     ProfileUpdateView,
@@ -28,6 +30,8 @@ urlpatterns = [
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("me/", MeView.as_view(), name="me"),
     path("change-password/", ChangePasswordView.as_view(), name="change-password"),
+    path("password-reset/request/", PasswordResetRequestView.as_view(), name="password-reset-request"),
+    path("password-reset/confirm/", PasswordResetConfirmView.as_view(), name="password-reset-confirm"),
     path(
         "users/<uuid:id>/profile-picture/",
         ProfilePictureDBView.as_view(),
